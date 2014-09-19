@@ -19,11 +19,21 @@ function clearScreen() {
 }
 
 
+var todos = {
+    items:   [
+        { 
+            label: "Reviewing",
+            done: false
+        }
+    ]
+};
+
+
 function renderLoop() {
     if (GUI.change) {
         GUI.change = false;
         clearScreen();
-        todoApp();
+        callit(__LINE__, todoApp, todos, [], {newTodo: ""});
     }
     window.requestAnimationFrame(renderLoop);
 }
@@ -35,72 +45,47 @@ function run() {
 }
 
 
-var tokens = "";
-var secret = "abbaba";
-var numOfSlots = 0;
-var success = false;
-
-function challenge() {
-    for (var _ of ul()) {
-        for (var _ of li()) {
-            for (var a of button("abutton", "A")) {
-                tokens += "a";
-            }
-        }
-        for (var _ of li()) {
-            for (var b of button("bbutton", "B")) {
-                tokens += "b";
-            }
-        }
-        for (var _ of li()) {
-            label("stream", "Tokens: ");
-            label("tokens", tokens);
-        }
+function getLine(offset) {
+  var stack = new Error().stack.split('\n'),
+      line = stack[(offset || 1) + 1].split(':');
+  return parseInt(line[line.length - 2], 10);
+}
+ 
+window.__defineGetter__('__LINE__', function () {
+  return getLine(2);
+});
 
 
-        for (var _ of li()) {
-            label("secretLab", "Secret: ");
-            if (tokens.length >= 6 && tokens.slice(tokens.length - 6, tokens.length) === secret) {
-                label("secret", "YES");
-            }
-            else {
-                for (var _ of timer("tim", 5000)) {
-                    numOfSlots += 1;
-                    tokens = "";
-                }
-            }
-        }
-        label("slotsLabel", "#Timeouts (" + numOfSlots + ")");
+var __next_objid=1;
+function objectId(obj) {
+    if (obj==null) return null;
+    if (obj.__obj_id==null) obj.__obj_id=__next_objid++;
+    return obj.__obj_id;
+}
 
+function clone(obj) {
+    if (null == obj || "object" != typeof obj) return obj;
+    var copy = obj.constructor();
+    for (var attr in obj) {
+        if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
     }
+    return copy;
 }
 
-
-var theText = "Enter text";
-var count = 0;
-
-var todo = {
-    items: [
-        { 
-            label: "Reviewing",
-            done: false
-        }
-    ]
-}
-
-var newItemLabel = "";
-var temperature = 0;
-
-
+var memo = {};
 function callit(site, func, model, args, initViewState) {
-    var key = [site, func, model.__path, "[", args, "]"].toString();
+    var key = [site, func.name, objectId(model)].toString();
+    console.log("Key = " + key);
     if (!memo[key]) {
-        memo[key] = initViewState;
+        memo[key] = clone(initViewState);
+        memo[key].__owner = key
     }
-    return func(margs, args, memo[key]);
+    var mval = memo[key];
+    var newArgs = [model].concat(args).concat([mval]);
+    return func.apply(this, newArgs);
 }
 
-function todoView(idx, item, items) {
+function todoView(item, idx, items, vs) {
     label("lab" + idx, item.label); 
     for (var ev of checkBox("chk" + idx, item.done)) {
         if (ev)
@@ -108,75 +93,37 @@ function todoView(idx, item, items) {
     }
     for (var _ of button("del" + idx, "Delete")) 
         items.splice(idx, 1);
+
+    for (var _ of button("vs" + idx, "Toggle viewstate"))  {
+        vs.toggle = !vs.toggle;
+    }
+    
+    label("toggle", vs.toggle);
  
 }
 
-function todoApp() {
+function todoApp(todo, vs) {
     for (var ulEvent of ul("todos")) {
         for (var idx in todo.items) {
             for (var liEvent of li())
-                todoView(idx, todo.items[idx], todo.items);
+                callit(__LINE__, todoView, todo.items[idx], [idx, todo.items], {toggle: false});
         }
         for (var _ of li()) {
             for (var _ of button("addit", "Add")) {
-                todo.items.push({label: newItemLabel, done: false});
-                newItemLabel = "";
+                todo.items.push({label: vs.newTodo, done: false});
+                vs.newTodo = "";
             }
-            for (var newTodo of textbox("new", newItemLabel)) 
-                newItemLabel = newTodo;
+            for (var newTodo of textbox("new", vs.newTodo)) 
+                vs.newTodo = newTodo;
         }
     }
 
     
     label("json", JSON.stringify(todo));
     
-    br();
 
-    label("c", "Celsius");
-    for (var c of textbox("cels", Math.round(temperature))) {
-        temperature = c;
-    }
-
-    br();
-    
-    label("f", "Fahrenheit");
-    for (var f of textbox("fahr", Math.round(temperature * 9.0/5.0 + 32))) {
-        temperature = (parseFloat(f) - 32) * 5.0/9.0;
-    }
-
-    challenge();
 }
 
-
-/*
-°C  x  9/5 + 32 = °F
-
-(°F  -  32)  x  5/9 = °C
-*/
-
-
-
-function render() {
-    for (var _ of button("aButton", "Click me")) {
-        count++;
-    }
-    label_("counter", "Clicked " + count + " times.").next();
-    for (var x of textbox("txt", theText)) {
-        theText = x;
-    }
-    label_("you", "You entered '" + theText + "'").next();
-    for (var event of ul("thelist")) {
-        if (event) {
-            count *= 3;
-        }
-        for (var i = 0; i < 10; i++) {
-                for (var _ of li()) {
-                    label("id" + i, "Label in list " + i * count);
-                }
-        }
-        label_("bla", "Yes " + count).next();
-    }
-}
 
 
 function *timer(id, delay) {
