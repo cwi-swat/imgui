@@ -33,7 +33,12 @@ var menu = {
         "Home",
         "Contact",
         {title: "Links", kids: [
-            "Amazon"
+            "Amazon",
+            {title: "More Links", kids: [
+                "Bol",
+                "Google",
+                "EasyChair"
+            ]}
         ]}
     ]
 };
@@ -117,6 +122,7 @@ function todoView(idx, item, items) {
 }
 
 
+var recStack = [];
 var stack = [];
 function adjust(id) {
     if (stack.length == 0) {
@@ -151,12 +157,21 @@ function cond(id, bool) {
     return bool;
 }
 
+function* rec(id) {
+    var elt = $("#" + id);
+    var recElt = $("#" + adjust(rec));
+    
+    
+}
+
 function recur(id, rec) {
     //var theId = adjust(id);
     var elt = $("#" + id);
     var recElt = $("#" + adjust(rec));
 
+    //stack.push(id);
     var x = adjustChildIds(elt.clone());
+    //stack.pop();
     recElt.replaceWith(x);    
 }
 
@@ -177,8 +192,10 @@ function* loop(id, arr) {
         yield idx;
         stack.pop();
     }
-    for (var i = idx; i < parent.children().length - 1; i++) {
-        parent.children().last().remove();
+    var len = parent.children().length - 1;
+    for (var i = idx; i < len; i++) {
+        var last = parent.children().last();
+        last.remove();
     }
     stack.pop();
 }
