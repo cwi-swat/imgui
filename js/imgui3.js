@@ -108,6 +108,16 @@ Paper
   - render same thing multiple times (why we need loc)
 
 - immutable: render functions compute new values (models = algebraic data types)
+  (PROBLEM: the delete buttons does not work in immutable case.)
+    in fact, iterating over de list is broken, because the idx is out of bounds after a delete...
+    render should continue with the current state, but propagating the change
+
+Read the model, print the gui?
+[
+- can only handle one event at each cycle (how to enforce/guarantee?)
+- return [ todoView(t) | t <- items ];...
+ Are we converging to rx/frp?
+
 - paths for identity: view state update
 - application logic: compute new value
 - align view-state patch paths in memo table.
@@ -134,18 +144,23 @@ function callit(site, func, model, args, initViewState) {
 // TODO: invent ids automatically.
 
 function todoView(item, idx, items, vs) {
+    // can we assume only one event will be handled at a time?
+    // then todoView returns either items' or item'
     label("lab" + idx, item.label); 
     for (var ev of checkBox("chk" + callStack.toString(), item.done)) {
         if (ev)
             item.done = GUI.checked;
     }
-    for (var _ of button("del" + callStack.toString(), "Delete")) 
-        items.splice(idx, 1);
+
+    for (var _ of button("del" + callStack.toString(), "Delete")) {
+        items.splice(idx, 1); // bad!!!
+    }
 
     for (var _ of button("vs" + callStack.toString(), "Toggle viewstate"))  {
         vs.toggle = !vs.toggle;
     }
     
+
     label("toggle", vs.toggle);
  
 }
