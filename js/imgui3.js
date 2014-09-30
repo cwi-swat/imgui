@@ -1,6 +1,19 @@
 
 "use strict";
 
+/*
+
+use id counter stack to generate idss for widgets
+reset when push on stack
+so that all widgets within 1 stack frame get sequential idss
+(e.g. stack.toString + id);
+
+- do mutations with insert, remove, update(obj, field, val)
+and execute after render is completed. 
+
+*/
+
+
 var GUI = {
     change: true,
     onClick: null,
@@ -141,11 +154,50 @@ function callit(site, func, model, args, initViewState) {
     return x;
 }
 
+
+function editableList(xs, render, init, vs) {
+    for (var _ of ul("aList")) {
+        if (xs.length == 0) {
+            for (var e of link("addInit", "+")) {
+                xs[0] = clone(init);
+            }
+        }
+        for (var idx = 0; idx < xs.length; idx++) {
+            for (var _ of li("x_" + idx)) {
+                callit(__LINE__, render, xs[idx], [], {toggle: false});
+                for (var e of link("insert" + idx, " + ")) {
+                    xs.splice(idx + 1, 0, clone(init));
+                }
+                for (var e of link("remove" + idx, " - ")) {
+                    xs.splice(idx, 1);
+                }
+                if (idx > 0) {
+                    for (var e of link("up" + idx, " ^ ")) {
+                        var elt = xs[idx];
+                        xs.splice(idx, 1);
+                        xs.splice(idx - 1, 0, elt);
+                    }
+                }
+                if (idx < xs.length - 1) {
+                    for (var e of link("down" + idx, " v ")) {
+                        var elt = xs[idx];
+                        xs.splice(idx, 1);
+                        xs.splice(idx + 1, 0, elt);
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 // TODO: invent ids automatically.
 
+// todView: Todo -> Maybe[Todo]
 function todoView(item, idx, items, vs) {
     // can we assume only one event will be handled at a time?
     // then todoView returns either items' or item'
+
     label("lab" + idx, item.label); 
     for (var ev of checkBox("chk" + callStack.toString(), item.done)) {
         if (ev)
@@ -165,13 +217,38 @@ function todoView(item, idx, items, vs) {
  
 }
 
-function todoList(todo, vs) {
-    for (var ulEvent of ul("todos")) {
-        for (var idx in todo.items) {
-            for (var liEvent of li())
-                callit(__LINE__, todoView, todo.items[idx], [idx, todo.items], {toggle: false});
-        }
+function todoView2(item, vs) {
+
+    for (var x of textbox("label" + callStack.toString(), item.label)) {
+        item.label = x;
     }
+        
+    for (var ev of checkBox("chk" + callStack.toString(), item.done)) {
+        if (ev)
+            item.done = GUI.checked;
+    }
+
+    for (var _ of button("vs" + callStack.toString(), "Toggle viewstate"))  {
+        vs.toggle = !vs.toggle;
+    }
+    
+
+    label("toggle", vs.toggle);
+ 
+}
+
+
+function todoList(todo, vs) {
+    function f(lst, vs) {
+        editableList(lst, todoView2, {label: "", done: false}, vs);
+    }
+    callit(__LINE__, f, todo.items, [], {});
+    // for (var ulEvent of ul("todos")) {
+    //     for (var idx in todo.items) {
+    //         for (var liEvent of li())
+    //             callit(__LINE__, todoView, todo.items[idx], [idx, todo.items], {toggle: false});
+    //     }
+    // }
 }
 
 function todoApp(todo, vs) {
@@ -183,7 +260,7 @@ function todoApp(todo, vs) {
     
     for (var _ of button("addit", "Add")) {
         todo.items.push({label: vs.newTodo, done: false});
-        //vs.newTodo = "";
+        vs.newTodo = "";
     }
     for (var newTodo of textbox("new", vs.newTodo)) 
         vs.newTodo = newTodo;
@@ -256,6 +333,19 @@ function* button(id, label) {
     }
 }
 
+
+function* link(id, label) {
+    FOCUS.append("<a id='" + id + "' href='#' " 
+                          + "onClick='GUI.onClick = \"" + id + "\"; GUI.change = true;'"
+                          + ">" 
+                          + label + "</a>");
+    if (GUI.onClick === id) {
+        GUI.onClick = null;
+        yield true;
+        GUI.change = true;
+    }
+}
+
 function* checkBox(id, chk) {
     if (GUI.checkBox === id) {
         if (GUI.checked) {
@@ -284,7 +374,7 @@ function* textbox(id, value) {
     if (GUI.textBox === id) {
         FOCUS.append("<input type='text' id='" + id + "' " 
                      + "onFocus='GUI.hasFocus = \"" + id + "\";' "
-                     + "onInput='GUI.textBox = \"" + id + "\"; GUI.value = this.value; GUI.change = true;' "
+                     + "onBlur='GUI.textBox = \"" + id + "\"; GUI.value = this.value; GUI.change = true;' "
                      + "value='" + GUI.value + "'>");
         GUI.textBox = null;
         yield GUI.value;
@@ -293,7 +383,7 @@ function* textbox(id, value) {
     else {
         FOCUS.append("<input type='text' id='" + id + "' " 
                      + "onFocus='GUI.hasFocus = \"" + id + "\";' "
-                     + "onInput='GUI.textBox = \"" + id + "\"; GUI.value = this.value; GUI.change = true;'"
+                     + "onBlur='GUI.textBox = \"" + id + "\"; GUI.value = this.value; GUI.change = true;'"
                      + " value='" + value + "'>");
     }
     if (GUI.hasFocus === id) {
