@@ -121,7 +121,7 @@ function dealWithIt(e) {
 // Render functions
 
 function* on(elt, events, attrs) {
-    var id = "id" + GUI.ids++;
+    var id = attrs["id"] || ("id" + GUI.ids++);
     attrs["id"] = id;
 
     if (events.length > 0) {
@@ -182,25 +182,6 @@ function* textbox(value) {
     }
 }
 
-function* ul() {
-    for (var _ of withElement("ul")) {
-	yield;
-    }
-}
-
-function* div() {
-    for (var _ of withElement("div")) {
-	yield;
-    }
-}
-
-function* li() {
-    for (var _ of withElement("li")) {
-	yield;
-    }
-}
-
-
 function* checkbox(value) {
     var attrs = {type: "checkbox"};
     if (value) {
@@ -243,13 +224,44 @@ function span(txt, attrs) {
     }
 }
 
-module.exports = {
+// Block level elements
+
+
+function defaultAttrs(idClass, givenAttrs) {
+    var attrs = givenAttrs || {};
+    if (!idClass) {
+	return attrs;
+    }
+    var hash = idClass.indexOf("#");
+    var dot = idClass.indexOf(".");
+    if (dot > -1) {
+	attrs['class'] = idClass.slice(dot + 1, hash > -1 ? hash : idClass.length);
+    }
+    if (hash > -1) {
+	attrs['id'] = idClass.slice(hash + 1);
+    }
+    return attrs;
+}
+
+
+function addBlockElements(obj) {
+    var elts = ["section", "div", "ul", "ol", "li", "header", "footer"];
+    for (var i = 0; i < elts.length; i++) {
+	obj[elts[i]] = function () {
+	    var elt = elts[i];
+	    return function* (idClass, attrs) {
+		for (var _ of withElement(elt, defaultAttrs(idClass, attrs))) {
+		    yield;
+		}
+	    }
+	}();
+    }
+}
+
+var libimgui = {
     setup: setup,
     component: component,
-    ul: ul,
-    li: li,
     p: p,
-    div: div,
     clone: clone,
     textbox: textbox,
     text: text,
@@ -259,3 +271,8 @@ module.exports = {
     callStack: callStack,
     memo: memo
 };
+
+addBlockElements(libimgui);
+
+module.exports = libimgui;
+
