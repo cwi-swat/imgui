@@ -255,5 +255,7 @@ module.exports = {
     text: text,
     checkbox: checkbox,
     button: button,
-    dealWithIt: dealWithIt
+    dealWithIt: dealWithIt,
+    callStack: callStack,
+    memo: memo
 };
