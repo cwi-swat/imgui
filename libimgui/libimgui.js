@@ -14,6 +14,7 @@ var GUI = {
     node: null,
     handlers: [],
     extras: {},
+    timers: {},
     ids: 0
 }
 
@@ -49,7 +50,6 @@ function mount(node) {
 	if (GUI.handlers.hasOwnProperty(id)) {
 	    var events = GUI.handlers[id];
 	    for (var i = 0; i < events.length; i++) {
-		console.log("Installing handler for " + events[i] + " on " + id);
 		var elt = document.getElementById(id);
 		elt.addEventListener(events[i], dealWithIt, false);
 	    }
@@ -58,12 +58,9 @@ function mount(node) {
 
     for (var id in GUI.extras) {
 	if (GUI.extras.hasOwnProperty(id)) {
-	    var f = GUI.extras[id];
-	    console.log("ID extra = " + id);
-	    console.log("f extra = " + f);
+	    var doSomething = GUI.extras[id];
 	    var elt = document.getElementById(id);
-	    console.log("Elt = " + elt);
-	    f(elt);
+	    doSomething(elt);
 	}
     }
     
@@ -93,7 +90,6 @@ function component(state, func) {
 	callStack.push([fname, objectId(model)].toString());
 	try {
 	    var key = callStack.toString();
-	    console.log("Key = " + key);
 	    if (!memo[key]) {
 		memo[key] = clone(state);
 		memo[key].__owner = key
@@ -221,6 +217,23 @@ function* checkbox(value) {
     }
 }
 
+function after(id, delay) {
+    if (GUI.timers.hasOwnProperty(id)) {
+	if (GUI.timers[id]) {
+	    //delete GUI.timers[id]; // don't reinstall
+	    return true;
+	}
+	return false;
+    }
+    else {
+	GUI.timers[id] = false;
+	window.setTimeout(function() {
+	    GUI.timers[id] = true;
+	    doRender();
+	}, delay);
+    }
+}
+
 function button(label) {
     var result = false;
     
@@ -294,6 +307,7 @@ var libimgui = {
     checkbox: checkbox,
     button: button,
     when: when,
+    after: after,
     on: on,
     dealWithIt: dealWithIt,
     callStack: callStack,
