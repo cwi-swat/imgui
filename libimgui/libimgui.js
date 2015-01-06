@@ -13,6 +13,7 @@ var GUI = {
     focus: [],
     node: null,
     handlers: [],
+    extras: {},
     ids: 0
 }
 
@@ -26,6 +27,7 @@ function setup(root, app, model) {
 
 function renderOnce() {
     GUI.handlers = {};
+    GUI.extras = {};
     GUI.focus = [];
     GUI.ids = 0;
     GUI.app(GUI.model);
@@ -53,6 +55,17 @@ function mount(node) {
 	    }
 	}
     }
+
+    for (var id in GUI.extras) {
+	if (GUI.extras.hasOwnProperty(id)) {
+	    var f = GUI.extras[id];
+	    console.log("ID extra = " + id);
+	    console.log("f extra = " + f);
+	    var elt = document.getElementById(id);
+	    console.log("Elt = " + elt);
+	    f(elt);
+	}
+    }
     
     GUI.node = node;
 }
@@ -69,7 +82,10 @@ function doRender() {
 
 
 var callStack = [];
+
+// we should somehow garbage collect this.
 var memo = {};
+
 function component(state, func) {
     var fname = func.name || func.toString();
     return function() {
@@ -121,6 +137,7 @@ function dealWithIt(e) {
 // Render functions
 
 function* on(elt, events, attrs) {
+    attrs = attrs || {};
     var id = attrs["id"] || ("id" + GUI.ids++);
     attrs["id"] = id;
 
@@ -145,12 +162,17 @@ function* on(elt, events, attrs) {
 
 
 function* withElement(elt, attrs) {
+    // TODO: if GUI.pretend, just yield.
     var parent = GUI.focus;
     GUI.focus = [];
     try {
 	yield;
     }
     finally {
+	if (attrs && attrs['extra']) {
+	    GUI.extras[attrs['id']] = attrs['extra'];
+	    delete attrs['extra'];
+	}
 	var vnode = h(elt, attrs, GUI.focus);
 	parent.push(vnode);
 	GUI.focus = parent;
@@ -174,8 +196,12 @@ function* when(elt, event, attrs) {
 // Basic widgets
 
 
-function* textbox(value) {
-    for (var ev of when("input", "blur", {type: "text", value: value})) {
+function* textbox(value, attrs) {
+    attrs = attrs || {};
+    attrs['type'] = 'text';
+    attrs['value'] = value;
+    
+    for (var ev of when("input", "blur", attrs)) {
 	if (ev) {
 	    yield ev.target.value;
 	}
@@ -267,6 +293,8 @@ var libimgui = {
     text: text,
     checkbox: checkbox,
     button: button,
+    when: when,
+    on: on,
     dealWithIt: dealWithIt,
     callStack: callStack,
     memo: memo
