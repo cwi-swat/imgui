@@ -18,9 +18,13 @@ var GUI = {
     ids: 0
 }
 
-function setup(app, model) {
+function init(app, model) {
     GUI.app = app;
     GUI.model = model;
+}
+    
+function setup(app, model) {
+    init(app, model);
     mount(renderOnce());
 }
 
@@ -202,6 +206,17 @@ function* textbox(value, attrs) {
     }
 }
 
+function* textarea(value, attrs) {
+    attrs = attrs || {};
+    
+    for (var ev of on("textarea", ["keyup", "blur"], attrs)) {
+	if (ev) {
+	    yield ev.target.value;
+	}
+	text(value);
+    }
+}
+
 function* checkbox(value) {
     var attrs = {type: "checkbox"};
     if (value) {
@@ -249,17 +264,17 @@ function text(txt) {
     GUI.focus.push(new VirtualText(txt));
 }
 
-function p(txt, attrs) {
-    for (var _ of withElement("p", attrs)) {
-	text(txt);
-    }
-}
+// function p(txt, attrs) {
+//     for (var _ of withElement("p", attrs)) {
+// 	text(txt);
+//     }
+// }
 
-function span(txt, attrs) {
-    for (var _ of withElement("span", attrs)) {
-	text(txt);
-    }
-}
+// function span(txt, attrs) {
+//     for (var _ of withElement("span", attrs)) {
+// 	text(txt);
+//     }
+// }
 
 // Block level elements
 
@@ -280,9 +295,23 @@ function defaultAttrs(idClass, givenAttrs) {
     return attrs;
 }
 
+function addInlineElements(obj) {
+    var elts = ["p", "span", "h1", "h2", "h3"];
+    for (var i = 0; i < elts.length; i++) {
+	obj[elts[i]] = function () {
+	    var elt = elts[i];
+	    return function (txt, idClass, attrs) {
+		for (var _ of withElement(elt, defaultAttrs(idClass, attrs))) {
+		    text(txt);
+		}
+	    }
+	}();
+    }
+}
 
 function addBlockElements(obj) {
-    var elts = ["section", "div", "ul", "ol", "li", "header", "footer"];
+    var elts = ["section", "div", "ul", "ol", "li", "header", "footer", "code", "pre",
+		"dl", "dt", "dd"];
     for (var i = 0; i < elts.length; i++) {
 	obj[elts[i]] = function () {
 	    var elt = elts[i];
@@ -297,9 +326,10 @@ function addBlockElements(obj) {
 
 var libimgui = {
     setup: setup,
+    init: init,
     component: component,
-    p: p,
     clone: clone,
+    textarea: textarea,
     textbox: textbox,
     text: text,
     checkbox: checkbox,
@@ -313,6 +343,7 @@ var libimgui = {
 };
 
 addBlockElements(libimgui);
+addInlineElements(libimgui);
 
 module.exports = libimgui;
 

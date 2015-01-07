@@ -22,6 +22,9 @@ var todos2 = imgui.component({}, function todos2(items, view, init) {
 });
 
 var todoApp = imgui.component({newTodo: ""}, function todoApp(model) {
+
+    imgui.h2("Todo App");
+    
     todos1(model.items, todoView, {done: false, label: ""});
     todos2(model.items, todoView, {done: false, label: ""});
     
@@ -34,9 +37,12 @@ var todoApp = imgui.component({newTodo: ""}, function todoApp(model) {
         this.newTodo = txt;
     }
     
-    imgui.p(JSON.stringify(model));
-    imgui.p(JSON.stringify(imgui.callStack));
-    imgui.p(JSON.stringify(imgui.memo));
+
+    imgui.h3("The model");
+    editableValue(model);
+
+    imgui.h3("The memo table containing viewstates");
+    editableValue(imgui.memo);
 });
 
 
@@ -80,6 +86,55 @@ var todoView = imgui.component({toggle: false}, function todoView(item) {
 });
 
 
+
+function editableValue(value) {
+    var result = value;
+    if (value === null) {
+	text("null");
+    }
+    else if (value === undefined) {
+	text("undefined");
+    }
+    else if (value.constructor === Array) {
+	editableList(value, editableValue, function () { return {}; });
+    }
+    else if (typeof value === "object") {
+	editableObject(value, editableValue);
+    }
+    else if (typeof value === "number") {
+	for (var txt of imgui.textbox(value)) {
+	    result = parseInt(txt);
+	}
+    }
+    else if (typeof value === "string") {
+	for (var txt of imgui.textbox(value)) {
+	    result = txt;
+	}
+    }
+    else if (typeof value === "boolean") {
+	for (var chk of imgui.checkbox(value)) {
+	    result = chk;
+	}
+    }
+    return result;
+}
+
+
+
+function editableObject(obj, render) {
+    for (var _ of imgui.dl()) {
+	for (var k in obj) {
+	    if (obj.hasOwnProperty(k) && k !== '__obj_id' && k !== '__owner') {
+		for (var _ of imgui.dt()) {
+		    imgui.text(k + ":");
+		}
+		for (var _ of imgui.dd()) {
+		    obj[k] = render(obj[k]);
+		}
+	    }
+	}
+    }
+}
 
 var editableList = imgui.component({}, function editableList(xs, renderx, newx) {
 
