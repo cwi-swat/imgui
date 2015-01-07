@@ -10,7 +10,6 @@ function run(src) {
     imgui.setup(selfEdit, m);
 }
 
-
 function selfEdit(m) {
     for (var txt of imgui.textarea(m.source, {rows: 30, cols: 120})) {
 	var m1 = imgui.clone(m);
