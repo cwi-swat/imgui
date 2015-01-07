@@ -18,7 +18,7 @@ function run() {
 
 
 function example(title, func) {
-    imgui.h3(title);
+    imgui.h3(title, "#" + func.name);
     for (var _ of imgui.pre()) {
 	imgui.text(func.toString());
     }
@@ -28,13 +28,34 @@ function example(title, func) {
     }
 }
 
+var sections = {
+    "Basics": basics,
+    "Model": usingTheModel,
+    "View state (component)": viewState,
+    "State-less components": statelessComponents,
+    "Upwards data flow (here)": upwardsDataFlow,
+    "Defining widgets (on)": definingButton
+};
+
+
 function examples(model) {
-    example("Basics", basics);
-    example("Model", usingTheModel);
-    example("View state (component)", viewState);
-    example("State-less components", statelessComponents);
-    example("Upwards data flow (here)", upwardsDataFlow);
-    example("Defining widgets (on)", definingButton);
+    imgui.h2("Examples");
+
+    for (var _ of imgui.ul()) {
+	for (var k in sections) {
+	    if (sections.hasOwnProperty(k)) {
+		for (var _ of imgui.li()) {
+		    imgui.a(k, ".toc", {href: "#" + sections[k].name});
+		}
+	    }
+	}
+    }
+    for (var k in sections) {
+	if (sections.hasOwnProperty(k)) {
+	    example(k, sections[k]);
+	}
+    }
+
 }
 
 function basics() {
