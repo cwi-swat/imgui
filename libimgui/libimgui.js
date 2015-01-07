@@ -159,6 +159,23 @@ function* on(elt, events, attrs) {
 }
 
 
+function* here(func) {
+    var pos = GUI.focus.length;
+    yield function() {
+	var parent = GUI.focus;
+	GUI.focus = [];
+	try {
+	    func.apply(this, arguments);
+	}
+	finally {
+	    for (var i = 0; i < GUI.focus.length; i++) {
+		parent.splice(pos + i, 0, GUI.focus[i]);
+	    }
+	    GUI.focus = parent;
+	}
+    };
+}
+
 function* withElement(elt, attrs) {
     // TODO: if GUI.pretend, just yield.
     var parent = GUI.focus;
@@ -264,18 +281,6 @@ function text(txt) {
     GUI.focus.push(new VirtualText(txt));
 }
 
-// function p(txt, attrs) {
-//     for (var _ of withElement("p", attrs)) {
-// 	text(txt);
-//     }
-// }
-
-// function span(txt, attrs) {
-//     for (var _ of withElement("span", attrs)) {
-// 	text(txt);
-//     }
-// }
-
 // Block level elements
 
 
@@ -335,6 +340,7 @@ var libimgui = {
     checkbox: checkbox,
     button: button,
     when: when,
+    here: here,
     after: after,
     on: on,
     dealWithIt: dealWithIt,
