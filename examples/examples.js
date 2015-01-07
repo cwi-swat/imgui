@@ -8,7 +8,8 @@ var model = {
         {label: "Email", done: false},
         {label: "Reviewing", done: true}
     ],
-    text: ""
+    text: "",
+    flag: false
 };
 
 function run() {
@@ -56,7 +57,26 @@ function usingTheModel(m) {
 }
 
 function viewState(m) {
+    var myComponent = imgui.component({flag: false}, function myComponent(m) {
+	imgui.text("Model flag: ");
+	for (var chk of imgui.checkbox(m.flag))
+	    m.flag = chk;
+	
+	imgui.text("View state flag: ");
+	for (var chk of imgui.checkbox(this.flag))
+	    this.flag = chk;
+    });
 
+    for (var _ of imgui.ol()) {
+	for (var _ of imgui.li()) 
+	    imgui.named("first", myComponent, m);
+	
+	for (var _ of imgui.li()) 
+	    imgui.named("second", myComponent, m);
+    }
+
+    //imgui.text(JSON.stringify(imgui.memo));
+    
 }
 
 function definingButton() {
