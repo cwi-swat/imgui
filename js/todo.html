@@ -1,37 +1,17 @@
 <html>
 
-
 <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
-<script src='imgui2.js'></script>
+<script src="todo-bundle.js"></script>
 <script>
-    $(document).ready(function() {
-    run(todoApp);
-    });
+  $(document).ready(function() {
+  setup("content", todoApp, todos);
+  });
 </script>
 <body>
 
-<div id="content">
+  <div id="content">
 
-
-<ul>
-<li id="todoItem" class="template">
-<span id="todoText">Reviewing</span>
-<input id="todoDone" type="checkbox"> <span id="doneValue" style="color: red;">Yes if it is done</span>
-<button id="delete">Delete</button>
-</li>
-</ul>
-<input id="newTodo" type="text" value="New todo">
-<button id="add">Add</button>
-
-
-<br>
-
-<span id="model">JSON of the model</span>
-
-</div>
-
-
-
+  </div>
 
 </body>
 

@@ -155,6 +155,34 @@ function callit(site, func, model, args, initViewState) {
 }
 
 
+/*
+ * ADT ops of type T
+ * - migrate to different construct of same type f(T)->T 
+ *   (same type args get carried over, others get defaults). 
+ * - move child left or right (from i to j, provided same type) (cycle through)
+ * - move child up if of type T (replace parent with child at i)
+ * - replace child of type U with something else of type U ("copy paste")
+ * 
+ */
+
+
+/*
+ * List ops:
+ * - insert T at i
+ * - delete at i
+ * - move from i to j
+ */
+
+var types = {
+    Exp: [
+        {cons: "add", args: ["Exp", "Exp"]},
+        {cons: "var", args: ["str"]},
+        {cons: "seq", args: [{list: "Exp"}]}
+    ]
+}
+
+
+
 function editableList(xs, render, init, vs) {
     for (var _ of ul("aList")) {
         if (xs.length == 0) {
