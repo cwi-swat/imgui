@@ -281,6 +281,10 @@ function text(txt) {
     GUI.focus.push(new VirtualText(txt));
 }
 
+function br() {
+    for (var _ of withElement("br", {})) ;
+}
+
 // Block level elements
 
 
@@ -292,7 +296,7 @@ function defaultAttrs(idClass, givenAttrs) {
     var hash = idClass.indexOf("#");
     var dot = idClass.indexOf(".");
     if (dot > -1) {
-	attrs['class'] = idClass.slice(dot + 1, hash > -1 ? hash : idClass.length);
+	attrs['className'] = idClass.slice(dot + 1, hash > -1 ? hash : idClass.length);
     }
     if (hash > -1) {
 	attrs['id'] = idClass.slice(hash + 1);
@@ -301,7 +305,7 @@ function defaultAttrs(idClass, givenAttrs) {
 }
 
 function addInlineElements(obj) {
-    var elts = ["p", "span", "h1", "h2", "h3"];
+    var elts = ["p", "span", "h1", "h2", "h3", "h4"];
     for (var i = 0; i < elts.length; i++) {
 	obj[elts[i]] = function () {
 	    var elt = elts[i];
@@ -343,6 +347,7 @@ var libimgui = {
     here: here,
     after: after,
     on: on,
+    br: br,
     dealWithIt: dealWithIt,
     callStack: callStack,
     memo: memo
