@@ -7,7 +7,8 @@ var model = {
     items: [
         {label: "Email", done: false},
         {label: "Reviewing", done: true}
-    ]
+    ],
+    text: ""
 };
 
 function run() {
@@ -15,31 +16,75 @@ function run() {
 }
 
 
+function example(title, func) {
+    imgui.h3(title);
+    for (var _ of imgui.pre()) {
+	imgui.text(func.toString());
+    }
+    imgui.br();
+    for (var _ of imgui.div(".output")) {
+	func(model);
+    }
+}
+
 function examples(model) {
-    imgui.h3("Upwards data flow");
-    upwardsDataFlow();
-    imgui.h3("Defining widgets");
-    definingButton();
+    example("Basics", basics);
+    example("Model", usingTheModel);
+    example("View state (component)", viewState);
+    example("State-less components", statelessComponents);
+    example("Upwards data flow (here)", upwardsDataFlow);
+    example("Defining widgets (on)", definingButton);
+}
+
+function basics() {
+    imgui.h4("Todos");
+    for (var _ of imgui.ul()) {
+	for (var _ of imgui.li()) 
+	    imgui.text("Email");
+	for (var _ of imgui.li()) 
+	    imgui.text("Reviewing");
+    }
+}
+
+function usingTheModel(m) {
+    imgui.text("Enter some text: ");
+    for (var txt of imgui.textbox(model.text)) {
+	model.text = txt;
+    }
+    imgui.br();
+    imgui.text("You entered: " + model.text);
+}
+
+function viewState(m) {
+
 }
 
 function definingButton() {
-    var f = ["function button(label) {",
-	     "  var result = false;",
-	     "  for (var ev of imgui.on(\"button\", [\"click\"], {})) {",
-	     "    result = ev != undefined;",
-	     "    imgui.text(label);",
-	     "  }",
-	     "  return result;",
-	     "}"].join("\n");
-    for (var _ of imgui.pre()) {
-	imgui.text(f);
+
+    function button(label) {
+	var result = false;
+	for (var ev of imgui.on("button", ["click"], {})) {
+	    result = ev != undefined;
+	    imgui.text(label);
+	}
+	return result;
     }
 
-    var button = eval(f + " button;");
-
-    imgui.p("");
-    
     button("My button");
+}
+
+function statelessComponents(m) {
+    function enterText(s) {
+	var result = s;
+	for (var txt of imgui.textbox(s)) {
+	    result = txt;
+	}
+	return result;
+    }
+
+    m.text = enterText(m.text);
+    imgui.br();
+    imgui.text("You entered: " + m.text);
 }
 
 function upwardsDataFlow() {
@@ -50,6 +95,7 @@ function upwardsDataFlow() {
     });
     
     for (var f of imgui.here(clickCount)) {
+	imgui.br();
 	var clicked = imgui.button("Click me");
 	f(clicked);
     }
