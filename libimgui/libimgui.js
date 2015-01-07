@@ -4,10 +4,10 @@ var diff = require('virtual-dom/diff');
 var patch = require('virtual-dom/patch');
 var createElement = require('virtual-dom/create-element');
 var VirtualText = require('virtual-dom/vnode/vtext');
+var VirtualNode = require('virtual-dom/vnode/vnode');
 
 var GUI = {
     event: null,
-    root: null,
     app: null,
     model: null,
     focus: [],
@@ -18,8 +18,7 @@ var GUI = {
     ids: 0
 }
 
-function setup(root, app, model) {
-    GUI.root = document.getElementById(root);
+function setup(app, model) {
     GUI.app = app;
     GUI.model = model;
     mount(renderOnce());
@@ -32,18 +31,18 @@ function renderOnce() {
     GUI.focus = [];
     GUI.ids = 0;
     GUI.app(GUI.model);
-    return GUI.focus[0];
+    return new VirtualNode("body", {}, GUI.focus);
 }
 
 function mount(node) {
-    var k = GUI.root.childNodes[0];
-
     if (GUI.node !== null) {
-	patch(k, diff(GUI.node, node));
+	patch(document.body, diff(GUI.node, node));
     }
     else {
-	GUI.root.replaceChild(createElement(node), k);
+	document.body = createElement(node);
     }
+    GUI.node = node;
+
 
     // this seems expensive....
     for (var id in GUI.handlers) {
@@ -64,7 +63,6 @@ function mount(node) {
 	}
     }
     
-    GUI.node = node;
 }
 
 function doRender() {

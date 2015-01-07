@@ -7,7 +7,7 @@ var model = {
 };
 
 function run() {
-    imgui.setup("content", abbabaApp, model);
+    imgui.setup(abbabaApp, model);
 }
 
 /*
@@ -27,16 +27,14 @@ like “BBABBABA” is ok as long as “ABBABA” is clicked within 5 seconds.
 // ids. Take away: components should not have side effects except on
 // view-state, and model, conditional on events.
 var abbabaApp = imgui.component({tokens: ""}, function abbabaApp(model) {
-    for (var _ of imgui.div()) {
-	if (imgui.button("A")) this.tokens += "a";
-	if (imgui.button("B")) this.tokens += "b";
-
-	var tooLate = imgui.after("timer", 5000);
-	var correct = this.tokens.slice(-6) === 'abbaba';
-
-	if (correct && !tooLate) imgui.p("Ok!");
-	if (!correct && tooLate) imgui.p("Fail!");
-    }
+    if (imgui.button("A")) this.tokens += "a";
+    if (imgui.button("B")) this.tokens += "b";
+    
+    var tooLate = imgui.after("timer", 5000);
+    var correct = this.tokens.slice(-6) === 'abbaba';
+    
+    if (correct && !tooLate) imgui.p("Ok!");
+    if (!correct && tooLate) imgui.p("Fail!");
 });
 
 

@@ -4,34 +4,68 @@ var imgui = require('../libimgui');
 
 var todos = {
     items: [
-        {label: "Reviewing", done: false}
+        {label: "Email", done: false},
+        {label: "Reviewing", done: true}
     ]
 };
 
 function run() {
-    imgui.setup("content", todoApp, todos);
+    imgui.setup(todoApp, todos);
 }
 
-var todoApp = imgui.component({newTodo: ""}, function todoApp(model) {
-    for (var _ of imgui.div()) {
-	editableList(model.items, todoView, {done: false, label: ""});
- 
-	if (imgui.button("Add")) {
-            model.items.push({label: this.newTodo, done: false});
-            this.newTodo = "";
-	}
-	
-	for (var txt of imgui.textbox(this.newTodo)) {
-            this.newTodo = txt;
-	}
+var todos1 = imgui.component({}, function todos1(items, view, init) {
+    editableList(items, view, init);
+});
 
-	imgui.p(JSON.stringify(model));
+var todos2 = imgui.component({}, function todos2(items, view, init) {
+    editableList(items, view, init);
+});
+
+var todoApp = imgui.component({newTodo: ""}, function todoApp(model) {
+    todos1(model.items, todoView, {done: false, label: ""});
+    todos2(model.items, todoView, {done: false, label: ""});
+    
+    if (imgui.button("Add")) {
+        model.items.push({label: this.newTodo, done: false});
+        this.newTodo = "";
     }
+    
+    for (var txt of imgui.textbox(this.newTodo)) {
+        this.newTodo = txt;
+    }
+    
+    imgui.p(JSON.stringify(model));
+    imgui.p(JSON.stringify(imgui.callStack));
+    imgui.p(JSON.stringify(imgui.memo));
+});
+
+
+
+
+var editableLabel = imgui.component({editing: false}, function editableLabel(txt) {
+    var result = txt;
+    function setFocus(elt) {
+	elt.focus();
+    }
+    
+    if (this.editing) {
+	for (var newTxt of imgui.textbox(txt, {extra: setFocus})) {
+	    result = newTxt;
+	    this.editing = false;
+	}
+    }
+    else {
+	for (var ev of imgui.on("span", ["dblclick"])) {
+	    if (ev) this.editing = true;
+	    imgui.text(txt);
+	}
+    }
+    return result;
 });
 
 
 var todoView = imgui.component({toggle: false}, function todoView(item) {
-    imgui.text(item.label);
+    item.label = editableLabel(item.label);
     
     for (var chk of imgui.checkbox(item.done)) {
         item.done = chk;
@@ -65,7 +99,7 @@ var editableList = imgui.component({}, function editableList(xs, renderx, newx) 
 	
         for (var idx = 0; idx < elts.length; idx++) {
 
-            for (var _ of imgui.li()) {
+            for (var _ of imgui.li(".completed")) {
                 renderx(elts[idx]);
 
                 if (imgui.button(" + ")) {
