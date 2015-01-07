@@ -87,6 +87,19 @@ var memo = {};
 
 function component(state, func) {
     var fname = func.name || func.toString();
+    return namedComponent(fname, func, state);
+}
+
+function named(fname, comp) {
+    var args = [];
+    for (var i = 2; i < arguments.length; i++) {
+	args.push(arguments[i]);
+    }
+    namedComponent(fname, comp).apply(this, args);
+}
+
+function namedComponent(fname, func, state) {
+    state = state || {};
     return function() {
 	var model = arguments[0]; // first arguments *must* be a model
 	callStack.push([fname, objectId(model)].toString());
@@ -350,7 +363,8 @@ var libimgui = {
     br: br,
     dealWithIt: dealWithIt,
     callStack: callStack,
-    memo: memo
+    memo: memo,
+    named: named
 };
 
 addBlockElements(libimgui);
