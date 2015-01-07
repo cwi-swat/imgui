@@ -1,4 +1,5 @@
 
+"use strict";
 
 var imgui = require('../libimgui');
 
@@ -11,17 +12,16 @@ function run(src) {
 
 
 function selfEdit(m) {
-    for (var txt of imgui.textarea(m.source, {rows: 30, cols: 120, style: "font-family: monospace;"})) {
-	try {
-	    imgui.init(eval(txt), m);
-	    m.source = txt;
-	}
-	catch (e) {
-	    console.log(e);
-	}
+    for (var txt of imgui.textarea(m.source, {rows: 30, cols: 120})) {
+	var m1 = imgui.clone(m);
+	imgui.init(eval(txt), m);
+        for (var k in m) {
+           if (m1.hasOwnProperty(k)) {
+              m[k] = m1[k];
+           }
+        }
+	m.source = txt;
     }
-
-    imgui.p("");
 
     /* do stuff here */
     
