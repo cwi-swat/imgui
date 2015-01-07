@@ -318,7 +318,7 @@ function defaultAttrs(idClass, givenAttrs) {
 }
 
 function addInlineElements(obj) {
-    var elts = ["p", "span", "h1", "h2", "h3", "h4"];
+    var elts = ["a", "p", "span", "h1", "h2", "h3", "h4"];
     for (var i = 0; i < elts.length; i++) {
 	obj[elts[i]] = function () {
 	    var elt = elts[i];
