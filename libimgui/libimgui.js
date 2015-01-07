@@ -91,11 +91,17 @@ function component(state, func) {
 }
 
 function named(fname, comp) {
-    var args = [];
-    for (var i = 2; i < arguments.length; i++) {
-	args.push(arguments[i]);
+    callStack.push(fname);
+    try {
+	var args = [];
+	for (var i = 2; i < arguments.length; i++) {
+	    args.push(arguments[i]);
+	}
+	comp.apply(this, args);
     }
-    namedComponent(fname, comp).apply(this, args);
+    finally {
+	callStack.pop();
+    }
 }
 
 function namedComponent(fname, func, state) {
