@@ -1,4 +1,18 @@
 
+
+/*
+
+TODO:
+
+- make possible to use multiple instance in a single page (put everything in object)
+
+- make "here" resilient against passing the yielded function to other functions. Currently 
+  it only works if it's called within the for-of loop.
+
+- remove "body" patching.
+
+*/
+
 var h = require('virtual-dom/h');
 var diff = require('virtual-dom/diff');
 var patch = require('virtual-dom/patch');
@@ -18,13 +32,14 @@ var GUI = {
     ids: 0
 }
 
-function init(app, model) {
+function init(app, model, root) {
     GUI.app = app;
     GUI.model = model;
+    GUI.root = root;
 }
     
-function setup(app, model) {
-    init(app, model);
+function setup(app, model, root) {
+    init(app, model, root);
     mount(renderOnce());
 }
 
@@ -35,15 +50,22 @@ function renderOnce() {
     GUI.focus = [];
     GUI.ids = 0;
     GUI.app(GUI.model);
-    return new VirtualNode("body", {}, GUI.focus);
+    // SO: root *must* be a div
+    if (GUI.root) {
+	return new VirtualNode("div", {id: GUI.root}, GUI.focus);
+    }
+    else {
+	return new VirtualNode("body", GUI.focus);
+    }
 }
 
 function mount(node) {
+    var container = GUI.root ? document.getElementById(GUI.root) : document.body;
     if (GUI.node !== null) {
-	patch(document.body, diff(GUI.node, node));
+	patch(container, diff(GUI.node, node));
     }
     else {
-	document.body = createElement(node);
+	container.parentNode.replaceChild(createElement(node), container);
     }
     GUI.node = node;
 
@@ -92,16 +114,18 @@ function component(state, func) {
 
 function named(fname, comp) {
     callStack.push(fname);
+    var result = undefined;
     try {
 	var args = [];
 	for (var i = 2; i < arguments.length; i++) {
 	    args.push(arguments[i]);
 	}
-	comp.apply(this, args);
+	result = comp.apply(this, args);
     }
     finally {
 	callStack.pop();
     }
+    return result;
 }
 
 function namedComponent(fname, func, state) {
@@ -296,6 +320,28 @@ function button(label) {
     return result;
 }
 
+
+function* select(idClass, attrs) {
+    for (var ev of when("select", "change", defaultAttrs(idClass, attrs))) {
+	if (ev && ev.target.selectedIndex) {
+	    yield ev.target.options[ev.target.selectedIndex].value;
+	}
+	else {
+	    yield undefined;
+	}
+    }
+}
+
+function option(value, label, selected) {
+    var attrs = {value: value};
+    if (selected) {
+	attrs['selected'] = 'selected';
+    }
+    for (var _ of withElement("option", attrs)) {
+	text(label);
+    }
+}
+
 function text(txt) {
     GUI.focus.push(new VirtualText(txt));
 }
@@ -359,6 +405,8 @@ var libimgui = {
     clone: clone,
     textarea: textarea,
     textbox: textbox,
+    option: option,
+    select: select,
     text: text,
     checkbox: checkbox,
     button: button,
