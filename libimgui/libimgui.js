@@ -11,6 +11,21 @@ TODO:
 
 - remove "body" patching.
 
+- syntax extension
+
+   Statement =
+      Expr Block
+      Expr "(" {Expr ","}* ")" Block
+
+   Block =
+      Statement
+      "{" "|" {Id ","}+ "|" Statement* "}"
+
+Expr Block -> Id() Block
+Expr(exp*) Stat -> Expr(exp*, function () { Stat })
+Expr(exp*) { |id*| stat* } -> Expr(exp*, function (id*) { Stat* })
+
+
 */
 
 var h = require('virtual-dom/h');
@@ -55,7 +70,7 @@ function renderOnce() {
 	return new VirtualNode("div", {id: GUI.root}, GUI.focus);
     }
     else {
-	return new VirtualNode("body", GUI.focus);
+	return new VirtualNode("body", {}, GUI.focus);
     }
 }
 
@@ -114,24 +129,22 @@ function component(state, func) {
 
 function named(fname, comp) {
     callStack.push(fname);
-    var result = undefined;
     try {
 	var args = [];
 	for (var i = 2; i < arguments.length; i++) {
 	    args.push(arguments[i]);
 	}
-	result = comp.apply(this, args);
+	return comp.apply(null, args);
     }
     finally {
 	callStack.pop();
     }
-    return result;
 }
 
 function namedComponent(fname, func, state) {
     state = state || {};
     return function() {
-	var model = arguments[0]; // first arguments *must* be a model
+	var model = arguments[0]; // first argument *must* be a model
 	callStack.push([fname, objectId(model)].toString());
 	try {
 	    var key = callStack.toString();
@@ -139,9 +152,8 @@ function namedComponent(fname, func, state) {
 		memo[key] = clone(state);
 		memo[key].__owner = key
 	    }
-	    var mval = memo[key];
-	    // state becomes "this"
-	    return func.apply(mval, arguments);
+	    var self = memo[key];
+	    return func.apply(null, [self].concat(Array.prototype.slice.call(arguments)));
 	}
 	finally {
 	    callStack.pop();
@@ -177,7 +189,9 @@ function dealWithIt(e) {
 
 // Render functions
 
-function* on(elt, events, attrs) {
+
+
+function on(elt, events, attrs, block) {
     attrs = attrs || {};
     var id = attrs["id"] || ("id" + GUI.ids++);
     attrs["id"] = id;
@@ -189,26 +203,26 @@ function* on(elt, events, attrs) {
 	}
     }
 
-    for (var _ of withElement(elt, attrs)) {
+    return withElement(elt, attrs, function() {
 	var event = GUI.event;
 	if (event && event.target.getAttribute('id') === id) {
 	    GUI.event = undefined; // maybe do in toplevel???
-	    yield event; // let it be handled
+	    return block(event); // let it be handled
 	}
-	else {
-	    yield undefined;
-	}
-    }
+	return block();
+    });
 }
 
 
-function* here(func) {
+
+
+function here(func, block) {
     var pos = GUI.focus.length;
-    yield function() {
+    block(function() {
 	var parent = GUI.focus;
 	GUI.focus = [];
 	try {
-	    func.apply(this, arguments);
+	    func.apply(null, arguments);
 	}
 	finally {
 	    for (var i = 0; i < GUI.focus.length; i++) {
@@ -216,15 +230,15 @@ function* here(func) {
 	    }
 	    GUI.focus = parent;
 	}
-    };
+    });
 }
 
-function* withElement(elt, attrs) {
-    // TODO: if GUI.pretend, just yield.
+function withElement(elt, attrs, func) {
+    // TODO: if GUI.pretend, don't build vnodes
     var parent = GUI.focus;
     GUI.focus = [];
     try {
-	yield;
+	return func();
     }
     finally {
 	if (attrs && attrs['extra']) {
@@ -239,57 +253,42 @@ function* withElement(elt, attrs) {
 
 
 
-function* when(elt, event, attrs) {
-    for (var ev of on(elt, [event], attrs)) {
-	if (ev && ev.type == event) {
-	    yield ev;
-	}
-	else {
-	    yield;
-	}
-    }
-}
-
-
 // Basic widgets
 
-
-function* textbox(value, attrs) {
+function textbox(value, attrs) {
     attrs = attrs || {};
     attrs['type'] = 'text';
     attrs['value'] = value;
-    
-    for (var ev of when("input", "blur", attrs)) {
-	if (ev) {
-	    yield ev.target.value;
-	}
-    }
+
+    return on("input", ["blur"], attrs, function(ev) {
+	return ev ? ev.target.value : value;
+    });
+
 }
 
-function* textarea(value, attrs) {
+function textarea(value, attrs) {
     attrs = attrs || {};
     
-    for (var ev of on("textarea", ["keyup", "blur"], attrs)) {
-	if (ev) {
-	    yield ev.target.value;
-	}
+    return on("textarea", ["keyup", "blur"], attrs, function(ev) {
+	var newValue = ev ? ev.target.value : value;
 	text(value);
-    }
+	return newValue;
+    });
 }
 
-function* checkbox(value) {
+function checkbox(value) {
     var attrs = {type: "checkbox"};
     if (value) {
 	attrs["checked"] = "true";
     }
     
-    for (var ev of when("input", "click", attrs)) {
-	if (ev) {
-	    yield ev.target.checked;
-	}
-    }
+    return on("input", ["click"], attrs, function(ev) {
+	return ev ? ev.target.checked : value;
+    });
 }
 
+
+// TODO: fix to closure style.
 function after(id, delay) {
     if (GUI.timers.hasOwnProperty(id)) {
 	if (GUI.timers[id]) {
@@ -308,28 +307,22 @@ function after(id, delay) {
 }
 
 function button(label) {
-    var result = false;
-    
-    for (var ev of when("button", "click", {})) {
-	if (ev) {
-	    result = true;
-	}
+    return on("button", ["click"], {}, function(ev) {
 	text(label);
-    }
-
-    return result;
+	return ev !== undefined;
+    });
 }
 
 
-function* select(idClass, attrs) {
-    for (var ev of when("select", "change", defaultAttrs(idClass, attrs))) {
-	if (ev && ev.target.selectedIndex) {
-	    yield ev.target.options[ev.target.selectedIndex].value;
-	}
-	else {
-	    yield undefined;
-	}
-    }
+function select(value, x, y, z) {
+    //idClass, attrs, block
+    var block = extractBlock(arguments);
+    return on("select", ["change"], defaultAttrs(x, y, z), function(ev) {
+	block();
+	return ev && ev.target.selectedIndex 
+	    ? ev.target.options[ev.target.selectedIndex].value
+	    : value;
+    });
 }
 
 function option(value, label, selected) {
@@ -337,9 +330,17 @@ function option(value, label, selected) {
     if (selected) {
 	attrs['selected'] = 'selected';
     }
-    for (var _ of withElement("option", attrs)) {
+    return withElement("option", attrs, function () {
 	text(label);
-    }
+    });
+}
+
+function label(txt) {
+    // FIXME: this is extremely brittle.
+    var id = "id" + (GUI.ids + 1); // NB: not ++ !!
+    return withElement("label", {"for": id}, function () {
+	 text(txt);
+    });
 }
 
 function text(txt) {
@@ -347,17 +348,34 @@ function text(txt) {
 }
 
 function br() {
-    for (var _ of withElement("br", {})) ;
+    withElement("br", {}, function() {});
 }
 
 // Block level elements
 
 
-function defaultAttrs(idClass, givenAttrs) {
-    var attrs = givenAttrs || {};
+function defaultAttrs(x, y, z) {
+    
+    if (typeof x === "function") {
+	return {};
+    }
+
+    var attrs = {};
+    var idClass;
+    if (typeof x === "string") {
+	idClass = x;
+	if (typeof y == "object") {
+	    attrs = y;
+	}
+    }
+    else if (typeof x === "object") {
+	attrs = x;
+    }
+
     if (!idClass) {
 	return attrs;
     }
+    
     var hash = idClass.indexOf("#");
     var dot = idClass.indexOf(".");
     if (dot > -1) {
@@ -372,29 +390,40 @@ function defaultAttrs(idClass, givenAttrs) {
 function addInlineElements(obj) {
     var elts = ["a", "p", "span", "h1", "h2", "h3", "h4"];
     for (var i = 0; i < elts.length; i++) {
-	obj[elts[i]] = function () {
-	    var elt = elts[i];
+	obj[elts[i]] = function (elt) {
 	    return function (txt, idClass, attrs) {
-		for (var _ of withElement(elt, defaultAttrs(idClass, attrs))) {
+		withElement(elt, defaultAttrs(idClass, attrs), function() {
 		    text(txt);
-		}
+		});
 	    }
-	}();
+	}(elts[i]);
     }
+}
+
+function extractBlock(args) {
+    for (var i = 0; i < args.length; i++) {
+	if ((typeof args[i]) === "function") {
+	    return args[i];
+	}
+    }
+    return function() {};
 }
 
 function addBlockElements(obj) {
     var elts = ["section", "div", "ul", "ol", "li", "header", "footer", "code", "pre",
-		"dl", "dt", "dd"];
+		"dl", "dt", "dd", "fieldset"];
     for (var i = 0; i < elts.length; i++) {
-	obj[elts[i]] = function () {
-	    var elt = elts[i];
-	    return function* (idClass, attrs) {
-		for (var _ of withElement(elt, defaultAttrs(idClass, attrs))) {
-		    yield;
+	obj[elts[i]] = function (elt) {
+	    return function (x, y, z) {
+		var block = function() {};
+		for (var i = 0; i < arguments.length; i++) {
+		    if ((typeof arguments[i]) === "function") {
+			block = arguments[i];
+		    }
 		}
+		return withElement(elt, defaultAttrs(x, y, z), extractBlock(arguments));
 	    }
-	}();
+	}(elts[i]);
     }
 }
 
@@ -408,9 +437,9 @@ var libimgui = {
     option: option,
     select: select,
     text: text,
+    label: label,
     checkbox: checkbox,
     button: button,
-    when: when,
     here: here,
     after: after,
     on: on,

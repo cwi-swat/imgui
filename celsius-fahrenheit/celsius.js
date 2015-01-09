@@ -1,25 +1,30 @@
 
 
-var imgui = require('../libimgui');
+var g = require('../libimgui');
 
-var model = {
-    temp: 0
+var m = {
+    t: 0
 };
 
 function run() {
-    imgui.setup(celsiusApp, model);
+    g.setup(c2f, m);
 }
 
-var celsiusApp = imgui.component({}, function celsiusApp(model) {
-    imgui.text("Celsius:");
-    for (var c of imgui.textbox(Math.round(model.temp))) 
-        model.temp = c;
+function toF(c) {
+    return Math.round(c * 9.0/5.0 + 32);
+}
 
-    imgui.text("Fahrenheit:");
-    for (var f of imgui.textbox(Math.round(model.temp * 9.0/5.0 + 32))) 
-        model.temp = (parseFloat(f) - 32) * 5.0/9.0;
-	
-});
+function toC(f) {
+    return Math.round((parseFloat(f) - 32) * 5.0/9.0);
+}
+
+function c2f(m) {
+    g.text("C:")
+    m.t = g.textbox(m.t);
+
+    g.text("F:")
+    m.t = toC(g.textbox(toF(m.t)));
+}
 				 
 
 module.exports = run;

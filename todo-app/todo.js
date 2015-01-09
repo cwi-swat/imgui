@@ -13,130 +13,67 @@ function run() {
     imgui.setup(todoApp, todos);
 }
 
-var todos1 = imgui.component({}, function todos1(items, view, init) {
-    editableList(items, view, init);
-});
 
-var todos2 = imgui.component({}, function todos2(items, view, init) {
-    editableList(items, view, init);
-});
-
-var todoApp = imgui.component({newTodo: ""}, function todoApp(model) {
+var todoApp = imgui.component({newTodo: ""}, function todoApp(self, model) {
 
     imgui.h2("Todo App");
     
-    todos1(model.items, todoView, {done: false, label: ""});
-    todos2(model.items, todoView, {done: false, label: ""});
+    imgui.named("todos1", editableList, model.items, todoView, {done: false, label: ""});
+    imgui.named("todos2", editableList, model.items, todoView, {done: false, label: ""});
     
     if (imgui.button("Add")) {
-        model.items.push({label: this.newTodo, done: false});
-        this.newTodo = "";
+        model.items.push({label: self.newTodo, done: false});
+        self.newTodo = "";
     }
     
-    for (var txt of imgui.textbox(this.newTodo)) {
-        this.newTodo = txt;
-    }
+    self.newTodo = imgui.textbox(self.newTodo);
     
+    // imgui.h3("The model");
+    // editableValue(model);
 
-    imgui.h3("The model");
-    editableValue(model);
-
-    imgui.h3("The memo table containing viewstates");
-    editableValue(imgui.memo);
+    // imgui.h3("The memo table containing viewstates");
+    // editableValue(imgui.memo);
 });
 
 
 
 
-var editableLabel = imgui.component({editing: false}, function editableLabel(txt) {
+var editableLabel = imgui.component({editing: false}, function editableLabel(self, txt) {
     var result = txt;
     function setFocus(elt) {
 	elt.focus();
     }
     
-    if (this.editing) {
-	for (var newTxt of imgui.textbox(txt, {extra: setFocus})) {
-	    result = newTxt;
-	    this.editing = false;
-	}
+    if (self.editing) {
+	result = imgui.textbox(txt, {extra: setFocus});
+	self.editing = false;
     }
     else {
-	for (var ev of imgui.on("span", ["dblclick"])) {
-	    if (ev) this.editing = true;
+	imgui.on("span", ["dblclick"], {}, function (ev) {
+	    if (ev) self.editing = true;
 	    imgui.text(txt);
-	}
+	});
     }
     return result;
 });
 
 
-var todoView = imgui.component({toggle: false}, function todoView(item) {
+var todoView = imgui.component({toggle: false}, function todoView(self, item) {
     item.label = editableLabel(item.label);
     
-    for (var chk of imgui.checkbox(item.done)) {
-        item.done = chk;
-    }
-
+    item.done = imgui.checkbox(item.done);
     if (imgui.button("Toggle viewstate"))  {
-        this.toggle = !this.toggle;
+        self.toggle = !self.toggle;
     }
     
-    imgui.text(this.toggle);
+    imgui.text(self.toggle);
  
 });
 
 
 
-function editableValue(value) {
-    var result = value;
-    if (value === null) {
-	text("null");
-    }
-    else if (value === undefined) {
-	text("undefined");
-    }
-    else if (value.constructor === Array) {
-	editableList(value, editableValue, function () { return {}; });
-    }
-    else if (typeof value === "object") {
-	editableObject(value, editableValue);
-    }
-    else if (typeof value === "number") {
-	for (var txt of imgui.textbox(value)) {
-	    result = parseInt(txt);
-	}
-    }
-    else if (typeof value === "string") {
-	for (var txt of imgui.textbox(value)) {
-	    result = txt;
-	}
-    }
-    else if (typeof value === "boolean") {
-	for (var chk of imgui.checkbox(value)) {
-	    result = chk;
-	}
-    }
-    return result;
-}
 
-
-
-function editableObject(obj, render) {
-    for (var _ of imgui.dl()) {
-	for (var k in obj) {
-	    if (obj.hasOwnProperty(k) && k !== '__obj_id' && k !== '__owner') {
-		for (var _ of imgui.dt()) {
-		    imgui.text(k + ":");
-		}
-		for (var _ of imgui.dd()) {
-		    obj[k] = render(obj[k]);
-		}
-	    }
-	}
-    }
-}
-
-var editableList = imgui.component({}, function editableList(xs, renderx, newx) {
+var editableList = imgui.component({}, function editableList(self, xs, renderx, newx) {
 
     function move(idx, dir) {
 	var elt = xs[idx];
@@ -144,7 +81,7 @@ var editableList = imgui.component({}, function editableList(xs, renderx, newx) 
         xs.splice(idx + dir, 0, elt);
     }
 
-    for (var _ of imgui.ul()) {
+    imgui.ul(function () {
         if (xs.length == 0 && imgui.button(" + ")) {
 	    xs[0] = imgui.clone(newx);
         }
@@ -154,7 +91,7 @@ var editableList = imgui.component({}, function editableList(xs, renderx, newx) 
 	
         for (var idx = 0; idx < elts.length; idx++) {
 
-            for (var _ of imgui.li(".completed")) {
+            imgui.li(".completed", function () {
                 renderx(elts[idx]);
 
                 if (imgui.button(" + ")) {
@@ -169,10 +106,11 @@ var editableList = imgui.component({}, function editableList(xs, renderx, newx) 
                 if (idx < xs.length - 1 && imgui.button(" v ")) {
 		    move(idx, +1);
                 }
-            }
+            });
 	    
         }
-    }
+	
+    });
 });
 
 module.exports = run;
