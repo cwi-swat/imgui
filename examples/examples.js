@@ -19,13 +19,13 @@ function run() {
 
 function example(title, func) {
     imgui.h3(title, "#" + func.name);
-    for (var _ of imgui.pre()) {
+    imgui.pre(function() {
 	imgui.text(func.toString());
-    }
+    });
     imgui.br();
-    for (var _ of imgui.div(".output")) {
+    imgui.div(".output", function() {
 	func(model);
-    }
+    });
 }
 
 var sections = {
@@ -41,15 +41,15 @@ var sections = {
 function examples(model) {
     imgui.h2("Examples");
 
-    for (var _ of imgui.ul()) {
+    imgui.ul(function() {
 	for (var k in sections) {
 	    if (sections.hasOwnProperty(k)) {
-		for (var _ of imgui.li()) {
+		imgui.li(function() {
 		    imgui.a(k, ".toc", {href: "#" + sections[k].name});
-		}
+		});
 	    }
 	}
-    }
+    });
     for (var k in sections) {
 	if (sections.hasOwnProperty(k)) {
 	    example(k, sections[k]);
@@ -60,55 +60,41 @@ function examples(model) {
 
 function basics() {
     imgui.h4("Todos");
-    for (var _ of imgui.ul()) {
-	for (var _ of imgui.li()) 
-	    imgui.text("Email");
-	for (var _ of imgui.li()) 
-	    imgui.text("Reviewing");
-    }
+    imgui.ul(function() {
+	imgui.li(function() { imgui.text("Email"); });
+	imgui.li(function() { imgui.text("Reviewing"); });
+    });
 }
 
 function usingTheModel(m) {
     imgui.text("Enter some text: ");
-    for (var txt of imgui.textbox(model.text)) {
-	model.text = txt;
-    }
+    model.text = imgui.textbox(model.text);
     imgui.br();
     imgui.text("You entered: " + model.text);
 }
 
 function viewState(m) {
-    var myComponent = imgui.component({flag: false}, function myComponent(m) {
+    var myComponent = imgui.component({flag: false}, function myComponent(self, m) {
 	imgui.text("Model flag: ");
-	for (var chk of imgui.checkbox(m.flag))
-	    m.flag = chk;
+	m.flag = imgui.checkbox(m.flag);
 	
 	imgui.text("View state flag: ");
-	for (var chk of imgui.checkbox(this.flag))
-	    this.flag = chk;
+	self.flag = imgui.checkbox(self.flag);
     });
 
-    for (var _ of imgui.ol()) {
-	for (var _ of imgui.li()) 
-	    imgui.named("first", myComponent, m);
-	
-	for (var _ of imgui.li()) 
-	    imgui.named("second", myComponent, m);
-    }
-
-    //imgui.text(JSON.stringify(imgui.memo));
-    
+    imgui.ol(function() {
+	imgui.li(function() { imgui.named("first", myComponent, m); });
+	imgui.li(function() { imgui.named("second", myComponent, m); });
+    });
 }
 
 function definingButton() {
 
     function button(label) {
-	var result = false;
-	for (var ev of imgui.on("button", ["click"], {})) {
-	    result = ev != undefined;
+	return imgui.on("button", ["click"], {}, function(ev) {
 	    imgui.text(label);
-	}
-	return result;
+	    return ev !== undefined;
+	});
     }
 
     button("My button");
@@ -116,143 +102,30 @@ function definingButton() {
 
 function statelessComponents(m) {
     function enterText(s) {
-	var result = s;
-	for (var txt of imgui.textbox(s)) {
-	    result = txt;
-	}
-	return result;
+	imgui.p("Enter some text: ");
+	return imgui.textbox(s);
     }
-
+    
     m.text = enterText(m.text);
     imgui.br();
     imgui.text("You entered: " + m.text);
 }
 
 function upwardsDataFlow() {
-    var clickCount = imgui.component({clicks: 0}, function clickCount(clicked) {
-	if (clicked) 
-	    this.clicks++;
-	imgui.text("Number of clicks: " + this.clicks);
+    var clickCount = imgui.component({clicks: 0}, function clickCount(self, clicked) {
+	if (clicked) {
+	    self.clicks++;
+	}
+	imgui.text("Number of clicks: " + self.clicks);
     });
     
-    for (var f of imgui.here(clickCount)) {
+    imgui.here(clickCount, function (f) {
 	imgui.br();
 	var clicked = imgui.button("Click me");
 	f(clicked);
-    }
+    });
 }
 
 
-
-var editableLabel = imgui.component({editing: false}, function editableLabel(txt) {
-    var result = txt;
-    function setFocus(elt) {
-	elt.focus();
-    }
-    
-    if (this.editing) {
-	for (var newTxt of imgui.textbox(txt, {extra: setFocus})) {
-	    result = newTxt;
-	    this.editing = false;
-	}
-    }
-    else {
-	for (var ev of imgui.on("span", ["dblclick"])) {
-	    if (ev) this.editing = true;
-	    imgui.text(txt);
-	}
-    }
-    return result;
-});
-
-
-
-function editableValue(value) {
-    var result = value;
-    if (value === null) {
-	text("null");
-    }
-    else if (value === undefined) {
-	text("undefined");
-    }
-    else if (value.constructor === Array) {
-	editableList(value, editableValue, function () { return {}; });
-    }
-    else if (typeof value === "object") {
-	editableObject(value, editableValue);
-    }
-    else if (typeof value === "number") {
-	for (var txt of imgui.textbox(value)) {
-	    result = parseInt(txt);
-	}
-    }
-    else if (typeof value === "string") {
-	for (var txt of imgui.textbox(value)) {
-	    result = txt;
-	}
-    }
-    else if (typeof value === "boolean") {
-	for (var chk of imgui.checkbox(value)) {
-	    result = chk;
-	}
-    }
-    return result;
-}
-
-
-
-function editableObject(obj, render) {
-    for (var _ of imgui.dl()) {
-	for (var k in obj) {
-	    if (obj.hasOwnProperty(k) && k !== '__obj_id' && k !== '__owner') {
-		for (var _ of imgui.dt()) {
-		    imgui.text(k + ":");
-		}
-		for (var _ of imgui.dd()) {
-		    obj[k] = render(obj[k]);
-		}
-	    }
-	}
-    }
-}
-
-var editableList = imgui.component({}, function editableList(xs, renderx, newx) {
-
-    function move(idx, dir) {
-	var elt = xs[idx];
-        xs.splice(idx, 1);
-        xs.splice(idx + dir, 0, elt);
-    }
-
-    for (var _ of imgui.ul()) {
-        if (xs.length == 0 && imgui.button(" + ")) {
-	    xs[0] = imgui.clone(newx);
-        }
-
-	// iterate over a copy
-	var elts = xs.slice(0);
-	
-        for (var idx = 0; idx < elts.length; idx++) {
-
-            for (var _ of imgui.li(".completed")) {
-                renderx(elts[idx]);
-
-                if (imgui.button(" + ")) {
-		    xs.splice(idx + 1, 0, imgui.clone(newx));
-                }
-                if (imgui.button(" - ")) {
-		    xs.splice(idx, 1);
-                }
-                if (idx > 0 && imgui.button(" ^ ")) {
-		    move(idx, -1);
-                }
-                if (idx < xs.length - 1 && imgui.button(" v ")) {
-		    move(idx, +1);
-                }
-            }
-	    
-        }
-    }
-});
 
 module.exports = run;
