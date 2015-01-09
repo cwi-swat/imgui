@@ -316,23 +316,46 @@ function button(label) {
 
 function select(value, x, y, z) {
     //idClass, attrs, block
+
+    function option(optValue, label) {
+	var attrs = {value: optValue};
+	if (optValue === value) {
+	    attrs['selected'] = true;
+	}
+	label = label || optValue;
+	return withElement("option", attrs, function () {
+	    text(label);
+	});
+    }
+    
     var block = extractBlock(arguments);
     return on("select", ["change"], defaultAttrs(x, y, z), function(ev) {
-	block();
-	return ev && ev.target.selectedIndex 
+	block(option);
+	return ev  
 	    ? ev.target.options[ev.target.selectedIndex].value
 	    : value;
     });
 }
 
-function option(value, label, selected) {
-    var attrs = {value: value};
-    if (selected) {
-	attrs['selected'] = 'selected';
+function radioGroup(value,  x, y, z) {
+    var result = value;
+    var name = name + (GUI.ids++);
+    function radio(radioValue) {
+	var attrs = {type: "radio", name: name};
+	if (radioValue === value) {
+	    attrs['checked'] = true;
+	}
+	return on("input", ["click"], attrs, function (ev) {
+	    if (ev) {
+		result = radioValue;
+	    }
+	    return radioValue;
+	});
     }
-    return withElement("option", attrs, function () {
-	text(label);
-    });
+
+    var block = extractBlock(arguments);
+    block(radio);
+    return result;
 }
 
 function label(txt) {
@@ -434,8 +457,8 @@ var libimgui = {
     clone: clone,
     textarea: textarea,
     textbox: textbox,
-    option: option,
     select: select,
+    radioGroup: radioGroup,
     text: text,
     label: label,
     checkbox: checkbox,
