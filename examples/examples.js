@@ -9,7 +9,8 @@ var model = {
         {label: "Reviewing", done: true}
     ],
     text: "",
-    flag: false
+    flag: false,
+    gender: "Male"
 };
 
 function run() {
@@ -34,7 +35,9 @@ var sections = {
     "View state (component)": viewState,
     "State-less components": statelessComponents,
     "Upwards data flow (here)": upwardsDataFlow,
-    "Defining widgets (on)": definingButton
+    "Defining widgets (on)": definingButton,
+    "Select": selectExample,
+    "Radio": radioExample
 };
 
 
@@ -126,6 +129,23 @@ function upwardsDataFlow() {
     });
 }
 
+function selectExample(m) {
+    m.gender = imgui.select(m.gender, function (option) {
+	option("Male");
+	option("Female");
+	option("Other");
+    });
+}
 
+function radioExample(m) {
+    m.gender = imgui.radioGroup(m.gender, function (radio) {
+	radio("Male");
+	imgui.text(" Male ");
+	radio("Female");
+	imgui.text(" Female ");
+	radio("Other");
+	imgui.text(" Other ");
+    });
+}
 
 module.exports = run;
