@@ -4,27 +4,22 @@
 
 TODO:
 
-- make possible to use multiple instance in a single page (put everything in object)
+- make possible to use multiple instance in a single page (put everything in an object)
 
 - make "here" resilient against passing the yielded function to other functions. Currently 
-  it only works if it's called within the for-of loop.
+  it only works if it's called within the closure.
 
 - remove "body" patching.
 
-- syntax extension
+- let event-handling render not build Vnodes.
 
-   Statement =
-      Expr Block
-      Expr "(" {Expr ","}* ")" Block
+- add assertions to check input params.
 
-   Block =
-      Statement
-      "{" "|" {Id ","}+ "|" Statement* "}"
+- garbage collect view states.
 
-Expr Block -> Id() Block
-Expr(exp*) Stat -> Expr(exp*, function () { Stat })
-Expr(exp*) { |id*| stat* } -> Expr(exp*, function (id*) { Stat* })
+- perhaps remove try-finally, since exception handling does not seems to be common in JS (and slow...)
 
+- make some elements both accept string and block (e.g. p).
 
 */
 
@@ -180,7 +175,6 @@ function clone(obj) {
 // Event handling
 
 function dealWithIt(e) {
-    //e.preventDefault(); // messes with checkbox?
     GUI.event = e;
     doRender();
 }
@@ -255,15 +249,37 @@ function withElement(elt, attrs, func) {
 
 // Basic widgets
 
-function textbox(value, attrs) {
-    attrs = attrs || {};
-    attrs['type'] = 'text';
-    attrs['value'] = value;
+var basicInputs = {
+    textBox: {type: 'text', event: 'input'},
+    spinBox: {type: 'number', event: 'input'},
+    slider: {type: 'range', event: 'input'},
+    emailBox: {type: 'email', event: 'input'},
+    searchBox: {type: 'search', event: 'input'},
+    datePicker: {type: 'date', event: 'change'},
+    colorPicker: {type: 'color', event: 'change'},
+    dateTimePicker: {type: 'datetime', event: 'change'},
+    localDateTimePicker: {type: 'datetime-local', event: 'change'},
+    monthPicker: {type: 'week', event: 'change'},
+    weekPicker: {type: 'week', event: 'change'},
+    timePicker: {type: 'time', event: 'change'}
+}
 
-    return on("input", ["blur"], attrs, function(ev) {
-	return ev ? ev.target.value : value;
-    });
-
+function addInputElements(obj) {
+    for (var name in basicInputs) {
+	if (basicInputs.hasOwnProperty(name)) {
+	    (function (name) {
+		obj[name] = function (value, attrs) {
+		    attrs = attrs || {};
+		    attrs['type'] = basicInputs[name].type;
+		    attrs['value'] = value;
+		    
+		    return on("input", [basicInputs[name].event], attrs, function(ev) {
+			return ev ? ev.target.value : value;
+		    });
+		}
+	    })(name);
+	}
+    }
 }
 
 function textarea(value, attrs) {
@@ -288,11 +304,9 @@ function checkbox(value) {
 }
 
 
-// TODO: fix to closure style.
 function after(id, delay) {
     if (GUI.timers.hasOwnProperty(id)) {
 	if (GUI.timers[id]) {
-	    //delete GUI.timers[id]; // don't reinstall
 	    return true;
 	}
 	return false;
@@ -305,6 +319,7 @@ function after(id, delay) {
 	}, delay);
     }
 }
+
 
 function button(label) {
     return on("button", ["click"], {}, function(ev) {
@@ -456,7 +471,6 @@ var libimgui = {
     component: component,
     clone: clone,
     textarea: textarea,
-    textbox: textbox,
     select: select,
     radioGroup: radioGroup,
     text: text,
@@ -475,6 +489,7 @@ var libimgui = {
 
 addBlockElements(libimgui);
 addInlineElements(libimgui);
+addInputElements(libimgui);
 
 module.exports = libimgui;
 
