@@ -10,7 +10,10 @@ var model = {
     ],
     text: "",
     flag: false,
-    gender: "Male"
+    gender: "Male",
+    number: 0,
+    date: "2014-10-03",
+    color: "#FFFFFF"
 };
 
 function run() {
@@ -37,7 +40,9 @@ var sections = {
     "Upwards data flow (here)": upwardsDataFlow,
     "Defining widgets (on)": definingButton,
     "Select": selectExample,
-    "Radio": radioExample
+    "Radio": radioExample,
+    "Slider": sliderExample,
+    "Pickers": pickersExample
 };
 
 
@@ -71,7 +76,7 @@ function basics() {
 
 function usingTheModel(m) {
     imgui.text("Enter some text: ");
-    model.text = imgui.textbox(model.text);
+    model.text = imgui.textBox(model.text);
     imgui.br();
     imgui.text("You entered: " + model.text);
 }
@@ -106,7 +111,7 @@ function definingButton() {
 function statelessComponents(m) {
     function enterText(s) {
 	imgui.p("Enter some text: ");
-	return imgui.textbox(s);
+	return imgui.textBox(s);
     }
     
     m.text = enterText(m.text);
@@ -146,6 +151,19 @@ function radioExample(m) {
 	radio("Other");
 	imgui.text(" Other ");
     });
+}
+
+function sliderExample(m) {
+    m.number = imgui.slider(m.number, {min:0, max: 10, step: 1});
+    imgui.text("The number is: " + m.number);
+}
+
+function pickersExample(m) {
+    m.date = imgui.datePicker(m.date);
+    imgui.text("The date is: " + m.date);
+    imgui.br();
+    m.color = imgui.colorPicker(m.color);
+    imgui.text("The color is: " + m.color);
 }
 
 module.exports = run;
