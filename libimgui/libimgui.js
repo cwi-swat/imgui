@@ -243,11 +243,11 @@ function on(elt, events, attrs, block) {
 
 function here(func, block) {
     var pos = GUI.focus.length;
-    block(function() {
+    return block(function() {
 	var parent = GUI.focus;
 	GUI.focus = [];
 	try {
-	    func.apply(null, arguments);
+	    return func.apply(null, arguments);
 	}
 	finally {
 	    for (var i = 0; i < GUI.focus.length; i++) {
