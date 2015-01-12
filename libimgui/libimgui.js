@@ -117,6 +117,15 @@ var callStack = [];
 // we should somehow garbage collect this.
 var memo = {};
 
+
+function getCallerLoc(offset) {
+    var stack = new Error().stack.split('\n');
+    var line = stack[(offset || 1) + 1];
+    //console.log("last / = " + line.lastIndexOf("/"));
+    return line.slice(line.lastIndexOf('/') + 1);
+}
+ 
+
 function component(state, func) {
     var fname = func.name || func.toString();
     return namedComponent(fname, func, state);
@@ -125,10 +134,10 @@ function component(state, func) {
 function named(fname, comp) {
     callStack.push(fname);
     try {
-	var args = [];
-	for (var i = 2; i < arguments.length; i++) {
-	    args.push(arguments[i]);
-	}
+	var args = Array.prototype.slice(arguments, 2);
+	// for (var i = 2; i < arguments.length; i++) {
+	//     args.push(arguments[i]);
+	// }
 	return comp.apply(null, args);
     }
     finally {
@@ -140,12 +149,11 @@ function namedComponent(fname, func, state) {
     state = state || {};
     return function() {
 	var model = arguments[0]; // first argument *must* be a model
-	callStack.push([fname, objectId(model)].toString());
+	callStack.push([fname, objectId(model), getCallerLoc(2)].toString());
 	try {
 	    var key = callStack.toString();
 	    if (!memo[key]) {
 		memo[key] = clone(state);
-		memo[key].__owner = key
 	    }
 	    var self = memo[key];
 	    return func.apply(null, [self].concat(Array.prototype.slice.call(arguments)));
@@ -249,22 +257,24 @@ function withElement(elt, attrs, func) {
 
 // Basic widgets
 
-var basicInputs = {
-    textBox: {type: 'text', event: 'input'},
-    spinBox: {type: 'number', event: 'input'},
-    slider: {type: 'range', event: 'input'},
-    emailBox: {type: 'email', event: 'input'},
-    searchBox: {type: 'search', event: 'input'},
-    datePicker: {type: 'date', event: 'change'},
-    colorPicker: {type: 'color', event: 'change'},
-    dateTimePicker: {type: 'datetime', event: 'change'},
-    localDateTimePicker: {type: 'datetime-local', event: 'change'},
-    monthPicker: {type: 'week', event: 'change'},
-    weekPicker: {type: 'week', event: 'change'},
-    timePicker: {type: 'time', event: 'change'}
-}
 
 function addInputElements(obj) {
+    var basicInputs = {
+	textBox: {type: 'text', event: 'input'},
+	spinBox: {type: 'number', event: 'input'},
+	slider: {type: 'range', event: 'input'},
+	emailBox: {type: 'email', event: 'input'},
+	searchBox: {type: 'search', event: 'input'},
+	datePicker: {type: 'date', event: 'change'},
+	colorPicker: {type: 'color', event: 'change'},
+	dateTimePicker: {type: 'datetime', event: 'change'},
+	localDateTimePicker: {type: 'datetime-local', event: 'change'},
+	monthPicker: {type: 'week', event: 'change'},
+	weekPicker: {type: 'week', event: 'change'},
+	timePicker: {type: 'time', event: 'change'}
+    }
+    
+
     for (var name in basicInputs) {
 	if (basicInputs.hasOwnProperty(name)) {
 	    (function (name) {
@@ -292,10 +302,11 @@ function textarea(value, attrs) {
     });
 }
 
-function checkbox(value) {
-    var attrs = {type: "checkbox"};
+function checkbox(value, attrs) {
+    attrs = attrs || {};
+    attrs.type = "checkbox";
     if (value) {
-	attrs["checked"] = "true";
+	attrs.checked = "true";
     }
     
     return on("input", ["click"], attrs, function(ev) {
@@ -321,8 +332,8 @@ function after(id, delay) {
 }
 
 
-function button(label) {
-    return on("button", ["click"], {}, function(ev) {
+function button(label, attrs) {
+    return on("button", ["click"], attrs, function(ev) {
 	text(label);
 	return ev !== undefined;
     });

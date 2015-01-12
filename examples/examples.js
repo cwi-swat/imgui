@@ -91,8 +91,9 @@ function viewState(m) {
     });
 
     imgui.ol(function() {
-	imgui.li(function() { imgui.named("first", myComponent, m); });
-	imgui.li(function() { imgui.named("second", myComponent, m); });
+	imgui.li(function() { myComponent(m); });
+	imgui.li(function() { myComponent(m); });
+	imgui.li(function() { imgui.text(JSON.stringify(imgui.memo)); });
     });
 }
 
