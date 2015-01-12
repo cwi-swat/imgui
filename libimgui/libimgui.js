@@ -150,11 +150,11 @@ function named(fname, comp) {
 
 function keyOf(value) {
     if (value === null) {
-	return null;
+	return "";
     }
 
     if (value === undefined) {
-	return undefined;
+	return "";
     }
 
     if (value.constructor === Array) {
@@ -165,7 +165,7 @@ function keyOf(value) {
 	return objectId(value);
     }
 
-    return value;
+    return "";
 }
 
 function namedComponent(fname, func, state) {
@@ -389,15 +389,19 @@ function select(value, x, y, z) {
 function radioGroup(value,  x, y, z) {
     var result = value;
     var name = name + (GUI.ids++);
-    function radio(radioValue) {
+    function radio(radioValue, label) {
 	var attrs = {type: "radio", name: name};
 	if (radioValue === value) {
 	    attrs['checked'] = true;
 	}
-	return on("input", ["click"], attrs, function (ev) {
-	    if (ev) {
-		result = radioValue;
-	    }
+	return on("label", [], {}, function () {
+	    on("input", ["click"], attrs, function (ev) {
+		if (ev) {
+		    result = radioValue;
+		}
+		return radioValue;
+	    })
+	    text(label || radioValue);
 	    return radioValue;
 	});
     }
@@ -499,6 +503,16 @@ function addBlockElements(obj) {
     }
 }
 
+
+function install(obj) {
+    for (var k in this) {
+	if (this.hasOwnProperty(k)) {
+	    obj[k] = this[k];
+	}
+    }
+}
+
+
 var libimgui = {
     setup: setup,
     init: init,
@@ -518,7 +532,8 @@ var libimgui = {
     dealWithIt: dealWithIt,
     callStack: callStack,
     memo: memo,
-    named: named
+    named: named,
+    install: install
 };
 
 addBlockElements(libimgui);
