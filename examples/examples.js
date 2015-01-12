@@ -39,16 +39,18 @@ var sections = {
     "Basics": basics,
     "Model": usingTheModel,
     "View state (component)": viewState,
-    "Simple todo app": todoApp,
     "State-less components": statelessComponents,
     "Upwards data flow (here)": upwardsDataFlow,
+//    "How to create a glitch": glitch,
     "Defining widgets (on)": definingButton,
     "Select": selectExample,
     "Radio": radioExample,
-    "Slider": sliderExample,
-    "Pickers": pickersExample,
+    // "Slider": sliderExample,
+    // "Pickers": pickersExample,
+    "Simple todo app": todoApp,
     "The current model": currentModel,
     "Current view state": currentViewState
+    
 };
 
 
@@ -88,21 +90,63 @@ function usingTheModel(m) {
 }
 
 function todoApp(m) {
-    var app = component({newTodo: ""}, function todoApp(self, model) {
-	function todoView(item) {
-	    item.done = checkBox(item.done);
-	    item.label = editableLabel(item, item.label);
-	}
-	
-	editableList(model.items, todoView, {done: false, label: "New todo"});
-	
+    var todoView = component({deleted: false}, function todoView(self, item) {
+	tr(function () {
+	    td(function () { item.done = checkBox(item.done); });
+	    td(function () { item.label = editableLabel(item, item.label); });
+	    td(function () { self.deleted = checkBox(self.deleted); });
+	})
+	return self.deleted;
+    });
+
+
+    function headerTable(headings, body) {
+	table(function() {
+	    thead(function() {
+		tr(function() {
+		    for (var i = 0; i < headings.length; i++) {
+			th(function() { text(headings[i]); });
+		    }
+		});
+	    });
+	    body();
+	});
+    }
+
+
+    function showTodos(items) {
+	var dels = [];
+	headerTable(["Done", "Text", "Delete"], function() {
+	    for (var i = 0; i < items.length; i++) {
+		var deleted = todoView(items[i]);
+		if (deleted) {
+		    dels.push(i);
+		}
+	    }
+	});
+	return dels;
+    }
+
+    var toolbar = component({newTodo: ""}, function toolbar(self, items, deleted) {	
 	if (button("Add")) {
             model.items.push({label: self.newTodo, done: false});
             self.newTodo = "";
 	}
-	
 	self.newTodo = textBox(self.newTodo);
+
+	br();
+	if (button("Delete")) {
+	    for (var i = 0; i < deleted.length; i++) {
+		model.items.splice(deleted[i] - i, 1);
+	    }
+	}
     });
+
+    function app(model) {
+	var deleted = showTodos(model.items);
+	toolbar(model.items, deleted);
+	
+    }
 
     app(m);
 }
@@ -156,7 +200,16 @@ function definingButton() {
 	});
     }
 
+    var statefulButton = component({count: 0}, function statefulButton(self, label) {
+	return on("button", ["click"], {}, function(ev) {
+	    if (ev) self.count++;
+	    text(label + ": " + self.count);
+	});
+    });
+
     button("My button");
+    statefulButton("My button");
+				   
 }
 
 function statelessComponents(m) {
@@ -170,21 +223,22 @@ function statelessComponents(m) {
     text("You entered: " + m.text);
 }
 
-var clickCount = component({clicks: 0}, function clickCount(self, clicked) {
-    if (clicked) {
-	self.clicks++;
-    }
-    text("Number of clicks: " + self.clicks);
-});
-
-
 function upwardsDataFlow() {
+
+    var clickCount = component({clicks: 0}, function clickCount(self, clicked) {
+	if (clicked) {
+	    self.clicks++;
+	}
+	text("Number of clicks: " + self.clicks);
+    });
+
     here(clickCount, function (f) {
 	br();
 	var clicked = button("Click me");
 	f(clicked);
     });
 }
+
 
 function selectExample(m) {
     m.gender = select(m.gender, function (option) {
