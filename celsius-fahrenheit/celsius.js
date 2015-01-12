@@ -1,13 +1,14 @@
 
 
-var g = require('../libimgui');
+var imgui = require('../libimgui');
+imgui.install(window);
 
 var m = {
     t: 0
 };
 
 function run() {
-    g.setup(c2f, m);
+    setup(c2f, m);
 }
 
 function toF(c) {
@@ -19,11 +20,11 @@ function toC(f) {
 }
 
 function c2f(m) {
-    g.text("C:")
-    m.t = g.textbox(m.t);
+    text("C:")
+    m.t = textBox(m.t);
 
-    g.text("F:")
-    m.t = toC(g.textbox(toF(m.t)));
+    text("F:")
+    m.t = toC(textBox(toF(m.t)));
 }
 				 
 
