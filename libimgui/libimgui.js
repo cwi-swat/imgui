@@ -302,7 +302,7 @@ function textarea(value, attrs) {
     });
 }
 
-function checkbox(value, attrs) {
+function checkBox(value, attrs) {
     attrs = attrs || {};
     attrs.type = "checkbox";
     if (value) {
@@ -460,7 +460,7 @@ function extractBlock(args) {
 
 function addBlockElements(obj) {
     var elts = ["section", "div", "ul", "ol", "li", "header", "footer", "code", "pre",
-		"dl", "dt", "dd", "fieldset"];
+		"dl", "dt", "dd", "fieldset", "table", "td", "tr", "th"];
     for (var i = 0; i < elts.length; i++) {
 	obj[elts[i]] = function (elt) {
 	    return function (x, y, z) {
@@ -486,7 +486,7 @@ var libimgui = {
     radioGroup: radioGroup,
     text: text,
     label: label,
-    checkbox: checkbox,
+    checkBox: checkBox,
     button: button,
     here: here,
     after: after,

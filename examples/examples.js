@@ -35,7 +35,9 @@ function example(title, func) {
 var sections = {
     "Basics": basics,
     "Model": usingTheModel,
+    "The current model": currentModel,
     "View state (component)": viewState,
+    "Current view state": currentViewState,
     "State-less components": statelessComponents,
     "Upwards data flow (here)": upwardsDataFlow,
     "Defining widgets (on)": definingButton,
@@ -81,13 +83,18 @@ function usingTheModel(m) {
     imgui.text("You entered: " + model.text);
 }
 
+function currentModel(m) {
+    editableValue(m);
+}
+
+
 function viewState(m) {
     var myComponent = imgui.component({flag: false}, function myComponent(self, m) {
 	imgui.text("Model flag: ");
-	m.flag = imgui.checkbox(m.flag);
+	m.flag = imgui.checkBox(m.flag);
 	
 	imgui.text("View state flag: ");
-	self.flag = imgui.checkbox(self.flag);
+	self.flag = imgui.checkBox(self.flag);
     });
 
     imgui.ol(function() {
@@ -95,6 +102,10 @@ function viewState(m) {
 	imgui.li(function() { myComponent(m); });
 	imgui.li(function() { imgui.text(JSON.stringify(imgui.memo)); });
     });
+}
+
+function currentViewState(m) {
+    editableValue(imgui.memo);
 }
 
 function definingButton() {
@@ -167,4 +178,103 @@ function pickersExample(m) {
     imgui.text("The color is: " + m.color);
 }
 
+
+
+function editableValue(value) {
+    if (value === null) {
+	imgui.text("null");
+	return null;
+    }
+
+    if (value === undefined) {
+	imgui.text("undefined");
+	return;
+    }
+
+    if (value.constructor === Array) {
+	return editableList(value, editableValue, {});
+    }
+
+    if (typeof value === "object") {
+	return editableObject(value, editableValue);
+    }
+
+    if (typeof value === "number") {
+	return parseInt(imgui.textBox(value));
+    }
+
+    if (typeof value === "string") {
+	return imgui.textBox(value);
+    }
+
+    if (typeof value === "boolean") {
+	return imgui.checkBox(value);
+    }
+
+    throw "Unsupported value: " + value;
+}
+
+
+
+function editableObject(obj, render) {
+    imgui.table(function() {
+	for (var k in obj) {
+	    if (obj.hasOwnProperty(k) && k !== '__obj_id') {
+		imgui.tr(function () {
+		    imgui.td(function() {
+			imgui.text(k + ":");
+		    });
+		    imgui.td(function() {
+			obj[k] = render(obj[k]);
+		    });
+		});
+	    }
+	}
+    });
+    return obj;
+}
+
+
+var editableList = imgui.component({}, function editableList(self, xs, renderx) {
+
+    function move(idx, dir) {
+	var elt = xs[idx];
+        xs.splice(idx, 1);
+        xs.splice(idx + dir, 0, elt);
+    }
+
+    imgui.ul(function() {
+        // if (xs.length == 0 && imgui.button(" + ")) {
+	//     xs[0] = imgui.clone(newx);
+        // }
+
+	// iterate over a copy
+	var elts = xs.slice(0);
+	
+        for (var idx = 0; idx < elts.length; idx++) {
+
+            imgui.li(function() {
+                renderx(elts[idx]);
+
+                // if (imgui.button(" + ")) {
+		//     xs.splice(idx + 1, 0, imgui.clone(newx));
+                // }
+                if (imgui.button(" - ")) {
+		    xs.splice(idx, 1);
+                }
+                if (idx > 0 && imgui.button(" ^ ")) {
+		    move(idx, -1);
+                }
+                if (idx < xs.length - 1 && imgui.button(" v ")) {
+		    move(idx, +1);
+                }
+            });
+        }
+    });
+
+    return xs;
+});
+
+
 module.exports = run;
+
