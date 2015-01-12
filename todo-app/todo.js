@@ -1,6 +1,7 @@
 
 
 var imgui = require('../libimgui');
+imgui.install(window);
 
 var todos = {
     items: [
@@ -13,39 +14,49 @@ var todos = {
 };
 
 function run() {
-    imgui.setup(todoApp, todos);
+    setup(todoApp, todos);
 }
 
 
-var todoApp = imgui.component({newTodo: ""}, function todoApp(self, model) {
+var todoApp = component({newTodo: "", errors: []}, function todoApp(self, model) {
 
-    imgui.h2("Todo App");
+    h2("Todo App");
 
 
     function todoView(item) {
-	item.done = imgui.checkBox(item.done);
-	item.label = editableLabel(item.label);
+	item.done = checkBox(item.done);
+	item.label = editableLabel(item, item.label);
     }
     
     
     var newTodo = {done: false, label: "New todo"};
     editableList(model.items, todoView, newTodo);
-    
-    if (imgui.button("Add")) {
-        model.items.push({label: self.newTodo, done: false});
-        self.newTodo = "";
+
+    if (button("Add")) {
+	self.errors = [];
+	if (self.newTodo[0].toUpperCase() !== self.newTodo[0]) {
+	    self.errors.push("Need to be capitalized");
+	}
+	else {
+            model.items.push({label: self.newTodo, done: false});
+            self.newTodo = "";
+	}
     }
     
-    self.newTodo = imgui.textBox(self.newTodo);
+    self.newTodo = textBox(self.newTodo);
+    for (var i = 0; i < self.errors.length; i++) {
+	br();
+	p(self.errors[i]);
+    }
 
-    imgui.p(JSON.stringify(imgui.memo));
+    p(JSON.stringify(memo));
     
 });
 
 
 
 
-var editableLabel = imgui.component({editing: false}, function editableLabel(self, txt) {
+var editableLabel = component({editing: false}, function editableLabel(self, _, txt) {
     var result = txt;
 
     function setFocus(elt) {
@@ -53,7 +64,7 @@ var editableLabel = imgui.component({editing: false}, function editableLabel(sel
     }
     
     if (self.editing) {
-	imgui.on("input", ["blur"], {type: "text", value: txt, extra: setFocus}, function (ev) {
+	on("input", ["blur"], {type: "text", value: txt, extra: setFocus}, function (ev) {
 	    if (ev) {
 		self.editing = false;
 		result = ev.target.value;
@@ -61,11 +72,11 @@ var editableLabel = imgui.component({editing: false}, function editableLabel(sel
 	});
     }
     else {
-	imgui.on("span", ["dblclick"], {}, function (ev) {
+	on("span", ["dblclick"], {}, function (ev) {
 	    if (ev) {
 		self.editing = true;
 	    }
-	    imgui.text(txt);
+	    text(txt);
 	});
     }
 
@@ -74,10 +85,10 @@ var editableLabel = imgui.component({editing: false}, function editableLabel(sel
 
 
 
-var editableList = imgui.component({}, function editableList(self, xs, renderx, newx) {
+function editableList(xs, renderx, newx) {
 
-    if (xs.length == 0 && imgui.button(" + ")) {
-	xs[0] = imgui.clone(newx);
+    if (xs.length == 0 && button(" + ")) {
+	xs[0] = clone(newx);
 	return xs;
     }
 
@@ -88,37 +99,37 @@ var editableList = imgui.component({}, function editableList(self, xs, renderx, 
     }
 
     
-    imgui.table(function () {
+    table(function () {
 
 	// iterate over a copy
 	var elts = xs.slice(0);
 	
         for (var idx = 0; idx < elts.length; idx++) {
-	    imgui.tr(function() {
-		imgui.td(function () {
+	    tr(function() {
+		td(function () {
                     renderx(elts[idx]);
 		});
 
-		imgui.td(function() {
-                    if (imgui.button(" + ")) {
-			xs.splice(idx + 1, 0, imgui.clone(newx));
+		td(function() {
+                    if (button(" + ")) {
+			xs.splice(idx + 1, 0, clone(newx));
                     }
 		});
 		
-                imgui.td(function() {
-		    if (imgui.button(" - ")) {
+                td(function() {
+		    if (button(" - ")) {
 			xs.splice(idx, 1);
                     }
 		});
 
-		imgui.td(function() {
-                    if (idx > 0 && imgui.button(" ^ ")) {
+		td(function() {
+                    if (idx > 0 && button(" ^ ")) {
 			move(idx, -1);
                     }
 		});
 
-		imgui.td(function() {
-                    if (idx < xs.length - 1 && imgui.button(" v ")) {
+		td(function() {
+                    if (idx < xs.length - 1 && button(" v ")) {
 			move(idx, +1);
                     }
 		});
@@ -127,6 +138,6 @@ var editableList = imgui.component({}, function editableList(self, xs, renderx, 
         }
 	
     });
-});
+}
 
 module.exports = run;
