@@ -137,7 +137,7 @@ function component(state, func) {
 function named(fname, comp) {
     callStack.push(fname);
     try {
-	var args = Array.prototype.slice(arguments, 2);
+	var args = Array.prototype.slice.call(arguments, 2);
 	// for (var i = 2; i < arguments.length; i++) {
 	//     args.push(arguments[i]);
 	// }
@@ -148,11 +148,31 @@ function named(fname, comp) {
     }
 }
 
+function keyOf(value) {
+    if (value === null) {
+	return null;
+    }
+
+    if (value === undefined) {
+	return undefined;
+    }
+
+    if (value.constructor === Array) {
+	return objectId(value);
+    }
+
+    if (typeof value === "object") {
+	return objectId(value);
+    }
+
+    return value;
+}
+
 function namedComponent(fname, func, state) {
     state = state || {};
     return function() {
 	var model = arguments[0]; // first argument *must* be a model
-	callStack.push([fname, objectId(model), getCallerLoc(2)].toString());
+	callStack.push([fname, keyOf(model), getCallerLoc(2)].toString());
 	try {
 	    var key = callStack.toString();
 	    if (!memo[key]) {
