@@ -122,6 +122,9 @@ function getCallerLoc(offset) {
     var stack = new Error().stack.split('\n');
     var line = stack[(offset || 1) + 1];
     //console.log("last / = " + line.lastIndexOf("/"));
+    if (line[line.length - 1] === ')') {
+	line = line.slice(0, line.length - 1);
+    }
     return line.slice(line.lastIndexOf('/') + 1);
 }
  
@@ -460,7 +463,7 @@ function extractBlock(args) {
 
 function addBlockElements(obj) {
     var elts = ["section", "div", "ul", "ol", "li", "header", "footer", "code", "pre",
-		"dl", "dt", "dd", "fieldset", "table", "td", "tr", "th"];
+		"dl", "dt", "dd", "fieldset", "table", "td", "tr", "th", "thead"];
     for (var i = 0; i < elts.length; i++) {
 	obj[elts[i]] = function (elt) {
 	    return function (x, y, z) {

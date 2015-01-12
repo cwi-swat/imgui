@@ -217,7 +217,13 @@ function editableValue(value) {
 
 
 function editableObject(obj, render) {
-    imgui.table(function() {
+    imgui.table(".table-bordered", function() {
+	imgui.thead(function() {
+	    imgui.tr(function () {
+		imgui.th(function () { imgui.text("Property"); });
+		imgui.th(function () { imgui.text("Value"); });		
+	    });
+	});
 	for (var k in obj) {
 	    if (obj.hasOwnProperty(k) && k !== '__obj_id') {
 		imgui.tr(function () {
