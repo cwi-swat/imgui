@@ -1,13 +1,10 @@
 
 
 var imgui = require('../libimgui');
-
-var model = {
-    correct: false
-};
+imgui.install(window);
 
 function run() {
-    imgui.setup(abbabaApp, model);
+    setup(abbabaApp, "ABBABA");
 }
 
 /*
@@ -23,18 +20,44 @@ regardless of what has been clicked before. For example a combination
 like “BBABBABA” is ok as long as “ABBABA” is clicked within 5 seconds.
 */
 
-// timers are side-effects, so if you want multiple ones, use multiple
-// ids. Take away: components should not have side effects except on
-// view-state, and model, conditional on events.
-var abbabaApp = imgui.component({tokens: ""}, function abbabaApp(model) {
-    if (imgui.button("A")) this.tokens += "a";
-    if (imgui.button("B")) this.tokens += "b";
-    
-    var tooLate = imgui.after("timer", 5000);
-    var correct = this.tokens.slice(-6) === 'abbaba';
-    
-    if (correct && !tooLate) imgui.p("Ok!");
-    if (!correct && tooLate) imgui.p("Fail!");
+
+var abbabaApp = component({tokens: "", times: []}, function abbabaApp(self, secret) {
+
+    function codeButton(token) {
+	if (button(token)) {
+	    self.times.push(new Date().getTime());
+	    self.tokens += token;
+	}
+    }
+
+    function isCorrect() {
+	return self.tokens.slice(-secret.length) === secret;
+    }
+
+    function isWithin(limit) {
+	var sub = self.times.slice(-secret.length);
+	return sub[sub.length-1] - sub[0] <= limit;
+    }
+
+    function isAvailable() {
+	return self.tokens.length >= secret.length;
+    }
+
+
+    codeButton("A");
+    codeButton("B");
+
+    if (isAvailable()) {
+	if (isCorrect()) {
+	    if (isWithin(5000)) 
+		p("Unlocked");
+	    else 
+		p("Too slow");
+	}
+	else 
+	    p("Wrong");
+    }
+
 });
 
 
