@@ -96,9 +96,9 @@ function mount(node) {
 		var elt = document.getElementById(id);
 		if (combo) {
 		    elt.addEventListener(event, function listen(e) {
-			e.stopPropagation();
-			e.preventDefault();
 			if (jwerty.is(combo, e)) {
+			    e.stopPropagation();
+			    e.preventDefault();
 			    e.isKey = function (c) { return jwerty.is(c, this); };
 			    e.target.removeEventListener(event, listen, false);
 			    dealWithIt(e);
