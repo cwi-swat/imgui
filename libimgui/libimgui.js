@@ -270,7 +270,7 @@ function withElement(elt, attrs, func) {
 	    GUI.extras[attrs['id']] = attrs['extra'];
 	    delete attrs['extra'];
 	}
-	var vnode = h(elt, attrs, GUI.focus);
+	var vnode = h(elt, {attributes: attrs}, GUI.focus);
 	parent.push(vnode);
 	GUI.focus = parent;
     }    
