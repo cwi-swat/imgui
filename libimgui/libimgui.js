@@ -29,6 +29,7 @@ var patch = require('virtual-dom/patch');
 var createElement = require('virtual-dom/create-element');
 var VirtualText = require('virtual-dom/vnode/vtext');
 var VirtualNode = require('virtual-dom/vnode/vnode');
+var jwerty = require('jwerty').jwerty;
 
 var GUI = {
     event: null,
@@ -85,8 +86,30 @@ function mount(node) {
 	if (GUI.handlers.hasOwnProperty(id)) {
 	    var events = GUI.handlers[id];
 	    for (var i = 0; i < events.length; i++) {
+		var event = events[i];
+		var combo = undefined;
+		var colon = event.indexOf(":");
+		if (colon != -1) {
+		    combo = event.slice(colon + 1);
+		    event = event.slice(0, colon);
+		}
 		var elt = document.getElementById(id);
-		elt.addEventListener(events[i], dealWithIt, false);
+		if (combo) {
+		    elt.addEventListener(event, function listen(e) {
+			e.stopPropagation();
+			e.preventDefault();
+			if (jwerty.is(combo, e)) {
+			    e.isKey = function (c) { return jwerty.is(c, this); };
+			    e.target.removeEventListener(event, listen, false);
+			    dealWithIt(e);
+			}
+		    }, false);
+		}
+		else {
+		    // todo: remove event listener here too?
+		    elt.addEventListener(event, dealWithIt, false);
+		}
+
 	    }
 	}
     }
