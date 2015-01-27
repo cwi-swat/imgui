@@ -16,11 +16,11 @@ var model = {
     gender: "Male",
     number: 0,
     date: "2014-10-03",
-    color: "#FFFFFF"
+    color: "#ffffff"
 };
 
 function run() {
-    setup(examples, model);
+    setup(examples, model, 'root');
 }
 
 
@@ -46,7 +46,7 @@ var sections = {
     "Select": selectExample,
     "Radio": radioExample,
     // "Slider": sliderExample,
-    // "Pickers": pickersExample,
+    "Pickers": pickersExample,
     "Simple todo app": todoApp,
     "The current model": currentModel,
     "Current view state": currentViewState
@@ -56,7 +56,7 @@ var sections = {
 
 function examples(model) {
     h2("Examples");
-
+    
     ul(function() {
 	for (var k in sections) {
 	    if (sections.hasOwnProperty(k)) {
@@ -94,7 +94,7 @@ function todoApp(m) {
 	tr(function () {
 	    td(function () { item.done = checkBox(item.done); });
 	    td(function () { item.label = editableLabel(item, item.label); });
-	    td(function () { self.deleted = checkBox(self.deleted); });
+	    td(function () { self.deleted = checkBox(self.deleted, {id: "myid" + item.__obj_id}); });
 	})
 	return self.deleted;
     });
@@ -104,9 +104,8 @@ function todoApp(m) {
 	table(function() {
 	    thead(function() {
 		tr(function() {
-		    for (var i = 0; i < headings.length; i++) {
+		    for (var i = 0; i < headings.length; i++)
 			th(function() { text(headings[i]); });
-		    }
 		});
 	    });
 	    body();
@@ -117,12 +116,9 @@ function todoApp(m) {
     function showTodos(items) {
 	var dels = [];
 	headerTable(["Done", "Text", "Delete"], function() {
-	    for (var i = 0; i < items.length; i++) {
-		var deleted = todoView(items[i]);
-		if (deleted) {
+	    for (var i = 0; i < items.length; i++) 
+		if (todoView(items[i])) 
 		    dels.push(i);
-		}
-	    }
 	});
 	return dels;
     }
@@ -134,7 +130,7 @@ function todoApp(m) {
 	}
 	self.newTodo = textBox(self.newTodo);
 
-	br();
+	deleted = deleted.sort(function (a, b) { return a - b; });
 	if (button("Delete")) {
 	    for (var i = 0; i < deleted.length; i++) {
 		model.items.splice(deleted[i] - i, 1);
@@ -145,7 +141,6 @@ function todoApp(m) {
     function app(model) {
 	var deleted = showTodos(model.items);
 	toolbar(model.items, deleted);
-	
     }
 
     app(m);
@@ -169,7 +164,6 @@ function viewState(m) {
     ol(function() {
 	li(function() { myComponent(m); });
 	li(function() { myComponent(m); });
-	li(function() { text(JSON.stringify(memo)); });
     });
 }
 
@@ -316,7 +310,7 @@ function editableObject(obj, render) {
 	    });
 	});
 	for (var k in obj) {
-	    if (obj.hasOwnProperty(k) && k !== '__obj_id') {
+	    if (obj.hasOwnProperty(k)) {
 		tr(function () {
 		    td(function() {
 			text(k + ":");

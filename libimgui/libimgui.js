@@ -21,14 +21,22 @@ TODO:
 
 - make some elements both accept string and block (e.g. p).
 
+- separate widgets in other lib
+
+- remove dep on jwerty (use proceed pattern)
+
+- allow event delegation via root, not just document.
+
+- make document injectable
+
 */
 
-var h = require('virtual-dom/h');
-var diff = require('virtual-dom/diff');
-var patch = require('virtual-dom/patch');
-var createElement = require('virtual-dom/create-element');
-var VirtualText = require('virtual-dom/vnode/vtext');
-var VirtualNode = require('virtual-dom/vnode/vnode');
+// var h = require('virtual-dom/h');
+// var diff = require('virtual-dom/diff');
+// var patch = require('virtual-dom/patch');
+// var createElement = require('virtual-dom/create-element');
+// var VirtualText = require('virtual-dom/vnode/vtext');
+// var VirtualNode = require('virtual-dom/vnode/vnode');
 var jwerty = require('jwerty').jwerty;
 
 var GUI = {
@@ -37,9 +45,9 @@ var GUI = {
     model: null,
     focus: [],
     node: null,
-    handlers: [],
     extras: {},
     timers: {},
+    handlers: {},
     ids: 0
 }
 
@@ -48,7 +56,32 @@ function init(app, model, root) {
     GUI.model = model;
     GUI.root = root;
 }
-    
+
+function register(event, id) {
+    // only add one handler to root, per event type.
+    if (!GUI.handlers.hasOwnProperty(event)) {
+	GUI.handlers[event] = [];
+	var r = document.getElementById(GUI.root);
+	r.addEventListener(event, function (e) {
+	    e.stopPropagation(); // don't leak upwards
+	    var id = e.target.getAttribute('id');
+	    if (GUI.handlers[event].indexOf(id) > -1) {
+		GUI.event = e;
+		doRender();
+	    }
+	}, false);
+    }
+    GUI.handlers[event].push(id);
+}
+
+function resetHandlers() {
+    for (var k in GUI.handlers) {
+	if (GUI.handlers.hasOwnProperty(k)) {
+	    GUI.handlers[k] = [];
+	}
+    }
+}
+
 function setup(app, model, root) {
     init(app, model, root);
     mount(renderOnce());
@@ -56,63 +89,28 @@ function setup(app, model, root) {
 
 
 function renderOnce() {
-    GUI.handlers = {};
+    resetHandlers();
     GUI.extras = {};
     GUI.focus = [];
     GUI.ids = 0;
     GUI.app(GUI.model);
-    // SO: root *must* be a div
-    if (GUI.root) {
-	return new VirtualNode("div", {id: GUI.root}, GUI.focus);
-    }
-    else {
-	return new VirtualNode("body", {}, GUI.focus);
-    }
 }
 
 function mount(node) {
-    var container = GUI.root ? document.getElementById(GUI.root) : document.body;
+    var active = document.activeElement;
+    var container = document.getElementById(GUI.root);
     if (GUI.node !== null) {
-	patch(container, diff(GUI.node, node));
+	reconcileKids(container, container.childNodes, GUI.focus);
     }
     else {
-	container.parentNode.replaceChild(createElement(node), container);
-    }
-    GUI.node = node;
-
-
-    // this seems expensive....
-    for (var id in GUI.handlers) {
-	if (GUI.handlers.hasOwnProperty(id)) {
-	    var events = GUI.handlers[id];
-	    for (var i = 0; i < events.length; i++) {
-		var event = events[i];
-		var combo = undefined;
-		var colon = event.indexOf(":");
-		if (colon != -1) {
-		    combo = event.slice(colon + 1);
-		    event = event.slice(0, colon);
-		}
-		var elt = document.getElementById(id);
-		if (combo) {
-		    elt.addEventListener(event, function listen(e) {
-			if (jwerty.is(combo, e)) {
-			    e.stopPropagation();
-			    e.preventDefault();
-			    e.isKey = function (c) { return jwerty.is(c, this); };
-			    e.target.removeEventListener(event, listen, false);
-			    dealWithIt(e);
-			}
-		    }, false);
-		}
-		else {
-		    // todo: remove event listener here too?
-		    elt.addEventListener(event, dealWithIt, false);
-		}
-
-	    }
+	while (container.firstChild) {
+	    container.removeChild(container.firstChild);
+	}
+	for (var i = 0; i < GUI.focus.length; i++) {
+	    container.appendChild(build(GUI.focus[i]));
 	}
     }
+    GUI.node = node;
 
     for (var id in GUI.extras) {
 	if (GUI.extras.hasOwnProperty(id)) {
@@ -210,6 +208,142 @@ function namedComponent(fname, func, state) {
     };
 }
 
+/*
+vdom element
+{tag:
+ attrs: {} etc.
+ kids: [] }
+
+*/
+
+function compat(d, v) {
+    //console.log("Compat? ");
+    //console.log("d = " + d.nodeValue);
+    //console.log("v = " + JSON.stringify(v));
+    return (d.nodeType === Node.TEXT_NODE && (typeof v !== 'object'))
+	|| (d.tagName === v.tag.toUpperCase());
+}
+
+// function setAttributeHook(dom, name, value) {
+//     function parseBoolean(v) {
+// 	if (!v) {
+// 	    return false;
+// 	}
+// 	return v.toString().toLowerCase() === 'true';
+//     }
+//     // if (name === 'checked') {
+//     // 	dom.checked = parseBoolean(value);
+//     // }
+//     // if (name === 'selected') {
+//     // 	dom.selected = parseBoolean(value);
+//     // }
+//     if (name === 'value') {
+// 	dom.value = value;
+//     }
+// }
+
+// function removeAttributeHook(dom, name) {
+//     // if (name === 'checked') {
+//     // 	dom.checked = false;
+//     // }
+//     // if (name === 'selected') {
+//     // 	dom.selected = false;
+//     // }
+//     if (name === 'value') {
+// 	dom.value = '';
+//     }
+// }
+
+function reconcile(dom, vdom) {
+    if (!compat(dom, vdom)) {
+	throw "Can only reconcile compatible nodes";
+    }
+    
+    // Text nodes
+    if (typeof vdom !== 'object') {
+	if (dom.nodeValue !== vdom) {
+	    dom.nodeValue = vdom.toString();
+	}
+	return;
+    }
+
+
+    // Element nodes
+    var vattrs = vdom.attrs || {};
+    for (var vattr in vattrs) {
+	if (vattrs.hasOwnProperty(vattr)) {
+	    if (dom.hasAttribute(vattr)) {
+		var dattr = dom.getAttribute(vattr);
+		if (dattr !== vattrs[vattr].toString()) { 
+		    console.log("Updating attribute: " + vattr + " = " + vattrs[vattr]);
+		    dom.setAttribute(vattr, vattrs[vattr]);
+		}
+	    }
+	    else {
+		console.log("Adding attribute: " + vattr + " = " + vattrs[vattr]);
+		dom.setAttribute(vattr, vattrs[vattr]);
+	    }
+	}
+    }
+    
+    for (var i = 0; i < dom.attributes.length; i++) {
+	var dattr = dom.attributes[i];
+	if (!vattrs.hasOwnProperty(dattr.nodeName)) {
+	    console.log("Removing attribute: " + dattr.nodeName);
+	    dom.removeAttribute(dattr.nodeName);
+	}
+    }
+
+    reconcileKids(dom, dom.childNodes, vdom.kids);
+}
+
+function reconcileKids(dom, dkids, vkids) {
+    var len = Math.min(dkids.length, vkids.length);
+    
+    for (var i = 0; i < len; i++) {
+	var dkid = dkids[i];
+	var vkid = vkids[i];
+	if (compat(dkid, vkid)) {
+	    reconcile(dkid, vkid);
+	}
+	else {
+	    console.log("Replacing child");
+	    dom.replaceChild(build(vkid), dkid);
+	}
+    }
+    
+    if (dkids.length > len) {
+	while (dkids.length > len) {
+	    console.log("Removing child ");
+	    dom.removeChild(dkids[len]);
+	}
+    }
+    else if (vkids.length > len) {
+	for (var i = len; i < vkids.length; i++) {
+	    console.log("Appending new child ");
+	    dom.appendChild(build(vkids[i]));
+	}
+    }
+}
+
+function build(vdom) {
+    if (typeof vdom === 'string') {
+	return document.createTextNode(vdom);
+    }
+
+    var elt = document.createElement(vdom.tag);
+    var vattrs = vdom.attrs || {};
+    for (var k in vattrs) {
+	if (vattrs.hasOwnProperty(k)) {
+	    elt.setAttribute(k, vattrs[k]);
+	}
+    }
+    for (var i = 0; i < vdom.kids.length; i++) {
+	elt.appendChild(build(vdom.kids[i]));
+    }
+    return elt;    
+}
+
 var __next_objid=1;
 function objectId(obj) {
     if (obj==null) return null;
@@ -237,6 +371,31 @@ function dealWithIt(e) {
 
 // Render functions
 
+function isKeyComboEvent(event) {
+    return event.indexOf(":") > - 1;
+}
+
+function getHandler(event) {
+    if (isKeyComboEvent(event)) {
+	return keyComboListener(event);
+    }
+    return dealWithIt;
+}
+    
+function keyComboListener(elt, event) {
+    var colon = event.indexOf(":");
+    var combo = event.slice(colon + 1);
+    event = event.slice(0, colon);
+    return function listen(e) {
+	if (jwerty.is(combo, e)) {
+	    e.stopPropagation();
+	    e.preventDefault();
+	    e.isKey = function (c) { return jwerty.is(c, this); };
+	    e.target.removeEventListener(event, listen, false);
+	    dealWithIt(e);
+	}
+    };
+}
 
 
 function on(elt, events, attrs, block) {
@@ -244,11 +403,10 @@ function on(elt, events, attrs, block) {
     var id = attrs["id"] || ("id" + GUI.ids++);
     attrs["id"] = id;
 
-    if (events.length > 0) {
-	GUI.handlers[id] = [];
-	for (var i = 0; i < events.length; i++) {
-	    GUI.handlers[id].push(events[i]);
-	}
+    
+    //GUI.handlers[id] = [];
+    for (var i = 0; i < events.length; i++) {
+	register(events[i], id);
     }
 
     return withElement(elt, attrs, function() {
@@ -281,7 +439,7 @@ function here(func, block) {
     });
 }
 
-function withElement(elt, attrs, func) {
+function withElement(elt, attrs, func, evs) {
     // TODO: if GUI.pretend, don't build vnodes
     var parent = GUI.focus;
     GUI.focus = [];
@@ -293,7 +451,7 @@ function withElement(elt, attrs, func) {
 	    GUI.extras[attrs['id']] = attrs['extra'];
 	    delete attrs['extra'];
 	}
-	var vnode = h(elt, {attributes: attrs}, GUI.focus);
+	var vnode = {tag: elt, attrs: attrs, kids: GUI.focus};
 	parent.push(vnode);
 	GUI.focus = parent;
     }    
@@ -306,7 +464,7 @@ function withElement(elt, attrs, func) {
 
 function addInputElements(obj) {
     var basicInputs = {
-	textBox: {type: 'text', event: 'input'},
+//	textBox: {type: 'text', event: 'input'},
 	spinBox: {type: 'number', event: 'input'},
 	slider: {type: 'range', event: 'input'},
 	emailBox: {type: 'email', event: 'input'},
@@ -348,12 +506,29 @@ function textarea(value, attrs) {
     });
 }
 
+function textBox(value, attrs) {
+    attrs = attrs || {};
+    attrs.type = 'text';
+    attrs.value = value;
+    attrs.extra = function (elt) {
+    	elt.value = value;
+    };
+    
+    
+    return on("input", ["input"], attrs, function(ev) {
+	return ev ? ev.target.value : value;
+    });
+}
+
 function checkBox(value, attrs) {
     attrs = attrs || {};
     attrs.type = "checkbox";
     if (value) {
 	attrs.checked = "true";
     }
+    attrs.extra = function (elt) {
+	elt.checked = value;
+    };
     
     return on("input", ["click"], attrs, function(ev) {
 	return ev ? ev.target.checked : value;
@@ -411,7 +586,7 @@ function select(value, x, y, z) {
 
 function radioGroup(value,  x, y, z) {
     var result = value;
-    var name = name + (GUI.ids++);
+    var name = 'name' + (GUI.ids++);
     function radio(radioValue, label) {
 	var attrs = {type: "radio", name: name};
 	if (radioValue === value) {
@@ -443,7 +618,7 @@ function label(txt) {
 }
 
 function text(txt) {
-    GUI.focus.push(new VirtualText(txt));
+    GUI.focus.push(txt);
 }
 
 function br() {
@@ -478,7 +653,7 @@ function defaultAttrs(x, y, z) {
     var hash = idClass.indexOf("#");
     var dot = idClass.indexOf(".");
     if (dot > -1) {
-	attrs['className'] = idClass.slice(dot + 1, hash > -1 ? hash : idClass.length);
+	attrs['class'] = idClass.slice(dot + 1, hash > -1 ? hash : idClass.length);
     }
     if (hash > -1) {
 	attrs['id'] = idClass.slice(hash + 1);
@@ -547,6 +722,7 @@ var libimgui = {
     text: text,
     label: label,
     checkBox: checkBox,
+    textBox: textBox,
     button: button,
     here: here,
     after: after,
