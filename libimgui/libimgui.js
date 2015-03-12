@@ -327,8 +327,8 @@ function reconcileKids(dom, dkids, vkids) {
 }
 
 function build(vdom) {
-    if (typeof vdom === 'string') {
-	return document.createTextNode(vdom);
+    if (typeof vdom !== 'object') {
+	return document.createTextNode(vdom.toString());
     }
 
     var elt = document.createElement(vdom.tag);
@@ -592,6 +592,9 @@ function radioGroup(value,  x, y, z) {
 	if (radioValue === value) {
 	    attrs['checked'] = true;
 	}
+	attrs.extra = function (elt) {
+	    elt.checked = (radioValue === value);
+	};
 	return on("label", [], {}, function () {
 	    on("input", ["click"], attrs, function (ev) {
 		if (ev) {
@@ -685,7 +688,7 @@ function extractBlock(args) {
 
 function addBlockElements(obj) {
     var elts = ["section", "div", "ul", "ol", "li", "header", "footer", "code", "pre",
-		"dl", "dt", "dd", "fieldset", "table", "td", "tr", "th", "thead"];
+		"dl", "dt", "dd", "fieldset", "table", "td", "tr", "th", "col", "thead"];
     for (var i = 0; i < elts.length; i++) {
 	obj[elts[i]] = function (elt) {
 	    return function (x, y, z) {
