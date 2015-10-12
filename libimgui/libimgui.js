@@ -327,6 +327,9 @@ function reconcileKids(dom, dkids, vkids) {
 }
 
 function build(vdom) {
+    if (vdom === undefined) {
+	return document.createTextNode("");
+    }
     if (typeof vdom !== 'object') {
 	return document.createTextNode(vdom.toString());
     }
