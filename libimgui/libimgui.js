@@ -4,30 +4,17 @@
 
 TODO:
 
-- make possible to use multiple instance in a single page (put everything in an object)
+Cleanup all magic:
+- components/callstack/memo etc.
+- #id, .class etc.
+- extras (?)
+- jwerty dep
 
-- make "here" resilient against passing the yielded function to other functions. Currently 
-  it only works if it's called within the closure.
-
-- remove "body" patching.
-
-- let event-handling render not build Vnodes.
-
-- add assertions to check input params.
-
-- garbage collect view states.
-
-- perhaps remove try-finally, since exception handling does not seems to be common in JS (and slow...)
-
-- make some elements both accept string and block (e.g. p).
-
-- separate widgets in other lib
-
-- remove dep on jwerty (use proceed pattern)
-
-- allow event delegation via root, not just document.
-
-- make document injectable
+Cleanup:
+- eliminate try-finally
+- disable node building in event handling
+- require explicit element
+- make GUI a class
 
 */
 
@@ -126,82 +113,6 @@ function doRender() {
 
 
 
-
-// var callStack = [];
-
-// // we should somehow garbage collect this.
-// var memo = {};
-
-
-// function getCallerLoc(offset) {
-//     var stack = new Error().stack.split('\n');
-//     var line = stack[(offset || 1) + 1];
-//     //console.log("last / = " + line.lastIndexOf("/"));
-//     if (line[line.length - 1] === ')') {
-// 	line = line.slice(0, line.length - 1);
-//     }
-//     return line.slice(line.lastIndexOf('/') + 1);
-// }
- 
-
-// function component(state, func) {
-//     var fname = func.name || func.toString();
-//     return namedComponent(fname, func, state);
-// }
-
-// function named(fname, comp) {
-//     callStack.push(fname);
-//     try {
-// 	var args = Array.prototype.slice.call(arguments, 2);
-// 	// for (var i = 2; i < arguments.length; i++) {
-// 	//     args.push(arguments[i]);
-// 	// }
-// 	return comp.apply(null, args);
-//     }
-//     finally {
-// 	callStack.pop();
-//     }
-// }
-
-// function keyOf(value) {
-//     if (value === null) {
-// 	return "";
-//     }
-
-//     if (value === undefined) {
-// 	return "";
-//     }
-
-//     if (value.constructor === Array) {
-// 	return objectId(value);
-//     }
-
-//     if (typeof value === "object") {
-// 	return objectId(value);
-//     }
-
-//     return "";
-// }
-
-// function namedComponent(fname, func, state) {
-//     state = state || {};
-//     return function() {
-// 	var model = arguments[0]; // first argument *must* be a model
-// 	callStack.push([fname, keyOf(model), getCallerLoc(2)].toString());
-// 	try {
-// 	    var key = callStack.toString();
-// 	    if (!memo[key]) {
-// 		memo[key] = clone(state);
-// 	    }
-// 	    var self = memo[key];
-// 	    return func.apply(null, [self].concat(Array.prototype.slice.call(arguments)));
-// 	}
-// 	finally {
-// 	    callStack.pop();
-// 	}
-//     };
-// }
-
 /*
 vdom element
 {tag:
@@ -218,35 +129,6 @@ function compat(d, v) {
 	|| (d.tagName === v.tag.toUpperCase());
 }
 
-// function setAttributeHook(dom, name, value) {
-//     function parseBoolean(v) {
-// 	if (!v) {
-// 	    return false;
-// 	}
-// 	return v.toString().toLowerCase() === 'true';
-//     }
-//     // if (name === 'checked') {
-//     // 	dom.checked = parseBoolean(value);
-//     // }
-//     // if (name === 'selected') {
-//     // 	dom.selected = parseBoolean(value);
-//     // }
-//     if (name === 'value') {
-// 	dom.value = value;
-//     }
-// }
-
-// function removeAttributeHook(dom, name) {
-//     // if (name === 'checked') {
-//     // 	dom.checked = false;
-//     // }
-//     // if (name === 'selected') {
-//     // 	dom.selected = false;
-//     // }
-//     if (name === 'value') {
-// 	dom.value = '';
-//     }
-// }
 
 function reconcile(dom, vdom) {
     if (!compat(dom, vdom)) {
@@ -341,21 +223,6 @@ function build(vdom) {
     return elt;    
 }
 
-// var __next_objid=1;
-// function objectId(obj) {
-//     if (obj==null) return null;
-//     if (obj.__obj_id==null) obj.__obj_id=__next_objid++;
-//     return obj.__obj_id;
-// }
-
-// function clone(obj) {
-//     if (null == obj || "object" != typeof obj) return obj;
-//     var copy = obj.constructor();
-//     for (var attr in obj) {
-//         if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
-//     }
-//     return copy;
-// }
 
 // Event handling
 
