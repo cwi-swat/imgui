@@ -1,15 +1,12 @@
 
 
-var imgui = require('../libimgui');
-imgui.install(window);
+var TrimGUI = require('../libimgui');
 
 var m = {
     t: 0
 };
 
-function run() {
-    setup(c2f, m, 'root');
-} 
+var ig = new TrimGUI(c2f, m, 'root');
 
 function toF(c) {
     return Math.round(c * 9.0/5.0 + 32);
@@ -20,12 +17,12 @@ function toC(f) {
 }
 
 function c2f(m) {
-    text("C:")
-    m.t = textBox(m.t);
+    ig.text("C:")
+    m.t = ig.textBox(m.t);
 
-    text("F:")
-    m.t = toC(textBox(toF(m.t)));
+    ig.text("F:")
+    m.t = toC(ig.textBox(toF(m.t)));
 }
 				 
 
-module.exports = run;
+module.exports = ig;
