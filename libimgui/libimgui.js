@@ -31,12 +31,6 @@ TODO:
 
 */
 
-// var h = require('virtual-dom/h');
-// var diff = require('virtual-dom/diff');
-// var patch = require('virtual-dom/patch');
-// var createElement = require('virtual-dom/create-element');
-// var VirtualText = require('virtual-dom/vnode/vtext');
-// var VirtualNode = require('virtual-dom/vnode/vnode');
 var jwerty = require('jwerty').jwerty;
 
 var GUI = {
@@ -133,80 +127,80 @@ function doRender() {
 
 
 
-var callStack = [];
+// var callStack = [];
 
-// we should somehow garbage collect this.
-var memo = {};
+// // we should somehow garbage collect this.
+// var memo = {};
 
 
-function getCallerLoc(offset) {
-    var stack = new Error().stack.split('\n');
-    var line = stack[(offset || 1) + 1];
-    //console.log("last / = " + line.lastIndexOf("/"));
-    if (line[line.length - 1] === ')') {
-	line = line.slice(0, line.length - 1);
-    }
-    return line.slice(line.lastIndexOf('/') + 1);
-}
+// function getCallerLoc(offset) {
+//     var stack = new Error().stack.split('\n');
+//     var line = stack[(offset || 1) + 1];
+//     //console.log("last / = " + line.lastIndexOf("/"));
+//     if (line[line.length - 1] === ')') {
+// 	line = line.slice(0, line.length - 1);
+//     }
+//     return line.slice(line.lastIndexOf('/') + 1);
+// }
  
 
-function component(state, func) {
-    var fname = func.name || func.toString();
-    return namedComponent(fname, func, state);
-}
+// function component(state, func) {
+//     var fname = func.name || func.toString();
+//     return namedComponent(fname, func, state);
+// }
 
-function named(fname, comp) {
-    callStack.push(fname);
-    try {
-	var args = Array.prototype.slice.call(arguments, 2);
-	// for (var i = 2; i < arguments.length; i++) {
-	//     args.push(arguments[i]);
-	// }
-	return comp.apply(null, args);
-    }
-    finally {
-	callStack.pop();
-    }
-}
+// function named(fname, comp) {
+//     callStack.push(fname);
+//     try {
+// 	var args = Array.prototype.slice.call(arguments, 2);
+// 	// for (var i = 2; i < arguments.length; i++) {
+// 	//     args.push(arguments[i]);
+// 	// }
+// 	return comp.apply(null, args);
+//     }
+//     finally {
+// 	callStack.pop();
+//     }
+// }
 
-function keyOf(value) {
-    if (value === null) {
-	return "";
-    }
+// function keyOf(value) {
+//     if (value === null) {
+// 	return "";
+//     }
 
-    if (value === undefined) {
-	return "";
-    }
+//     if (value === undefined) {
+// 	return "";
+//     }
 
-    if (value.constructor === Array) {
-	return objectId(value);
-    }
+//     if (value.constructor === Array) {
+// 	return objectId(value);
+//     }
 
-    if (typeof value === "object") {
-	return objectId(value);
-    }
+//     if (typeof value === "object") {
+// 	return objectId(value);
+//     }
 
-    return "";
-}
+//     return "";
+// }
 
-function namedComponent(fname, func, state) {
-    state = state || {};
-    return function() {
-	var model = arguments[0]; // first argument *must* be a model
-	callStack.push([fname, keyOf(model), getCallerLoc(2)].toString());
-	try {
-	    var key = callStack.toString();
-	    if (!memo[key]) {
-		memo[key] = clone(state);
-	    }
-	    var self = memo[key];
-	    return func.apply(null, [self].concat(Array.prototype.slice.call(arguments)));
-	}
-	finally {
-	    callStack.pop();
-	}
-    };
-}
+// function namedComponent(fname, func, state) {
+//     state = state || {};
+//     return function() {
+// 	var model = arguments[0]; // first argument *must* be a model
+// 	callStack.push([fname, keyOf(model), getCallerLoc(2)].toString());
+// 	try {
+// 	    var key = callStack.toString();
+// 	    if (!memo[key]) {
+// 		memo[key] = clone(state);
+// 	    }
+// 	    var self = memo[key];
+// 	    return func.apply(null, [self].concat(Array.prototype.slice.call(arguments)));
+// 	}
+// 	finally {
+// 	    callStack.pop();
+// 	}
+//     };
+// }
 
 /*
 vdom element
@@ -347,21 +341,21 @@ function build(vdom) {
     return elt;    
 }
 
-var __next_objid=1;
-function objectId(obj) {
-    if (obj==null) return null;
-    if (obj.__obj_id==null) obj.__obj_id=__next_objid++;
-    return obj.__obj_id;
-}
+// var __next_objid=1;
+// function objectId(obj) {
+//     if (obj==null) return null;
+//     if (obj.__obj_id==null) obj.__obj_id=__next_objid++;
+//     return obj.__obj_id;
+// }
 
-function clone(obj) {
-    if (null == obj || "object" != typeof obj) return obj;
-    var copy = obj.constructor();
-    for (var attr in obj) {
-        if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
-    }
-    return copy;
-}
+// function clone(obj) {
+//     if (null == obj || "object" != typeof obj) return obj;
+//     var copy = obj.constructor();
+//     for (var attr in obj) {
+//         if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
+//     }
+//     return copy;
+// }
 
 // Event handling
 
@@ -720,8 +714,8 @@ function install(obj) {
 var libimgui = {
     setup: setup,
     init: init,
-    component: component,
-    clone: clone,
+//    component: component,
+//    clone: clone,
     textarea: textarea,
     select: select,
     radioGroup: radioGroup,
@@ -734,10 +728,10 @@ var libimgui = {
     after: after,
     on: on,
     br: br,
-    dealWithIt: dealWithIt,
-    callStack: callStack,
-    memo: memo,
-    named: named,
+//    dealWithIt: dealWithIt,
+//    callStack: callStack,
+//    memo: memo,
+//    named: named,
     install: install
 };
 
