@@ -20,7 +20,7 @@ class Article {
     }
 }
 
-class ShoppingCartEntry {
+class Entry {
     constructor (article) {
 	this.id = ++autoNumber; // UUID for this entry
 	this.article = article;
@@ -57,7 +57,7 @@ var articles = [
 var cart = new ShoppingCart();
 
 // With a demo item inside
-cart.entries.push(new ShoppingCartEntry(articles[0]));
+cart.entries.push(new Entry(articles[0]));
 
 
 var model = {
@@ -99,7 +99,7 @@ function generate(articles, cart) {
     for(var i = 0; i < amount; i++) {
         var art = new Article("Generated item " + articles.length, articles.length);
         articles.push(art);
-        cart.entries.push(new ShoppingCartEntry(art));
+        cart.entries.push(new Entry(art));
     }
 }
 
@@ -138,7 +138,7 @@ function articleView(cart, articles, article, i) {
 		existingEntry.amount += 1;
             }
 	    else {
-		cart.entries.unshift(new ShoppingCartEntry(article))
+		cart.entries.unshift(new Entry(article))
 	    }
 	    
 	}
