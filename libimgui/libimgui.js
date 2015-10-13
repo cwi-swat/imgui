@@ -275,12 +275,12 @@ function reconcile(dom, vdom) {
 	    if (dom.hasAttribute(vattr)) {
 		var dattr = dom.getAttribute(vattr);
 		if (dattr !== vattrs[vattr].toString()) { 
-		    console.log("Updating attribute: " + vattr + " = " + vattrs[vattr]);
+		    //console.log("Updating attribute: " + vattr + " = " + vattrs[vattr]);
 		    dom.setAttribute(vattr, vattrs[vattr]);
 		}
 	    }
 	    else {
-		console.log("Adding attribute: " + vattr + " = " + vattrs[vattr]);
+		//console.log("Adding attribute: " + vattr + " = " + vattrs[vattr]);
 		dom.setAttribute(vattr, vattrs[vattr]);
 	    }
 	}
@@ -289,7 +289,7 @@ function reconcile(dom, vdom) {
     for (var i = 0; i < dom.attributes.length; i++) {
 	var dattr = dom.attributes[i];
 	if (!vattrs.hasOwnProperty(dattr.nodeName)) {
-	    console.log("Removing attribute: " + dattr.nodeName);
+	    //console.log("Removing attribute: " + dattr.nodeName);
 	    dom.removeAttribute(dattr.nodeName);
 	}
     }
@@ -307,20 +307,20 @@ function reconcileKids(dom, dkids, vkids) {
 	    reconcile(dkid, vkid);
 	}
 	else {
-	    console.log("Replacing child");
+	    //console.log("Replacing child");
 	    dom.replaceChild(build(vkid), dkid);
 	}
     }
     
     if (dkids.length > len) {
 	while (dkids.length > len) {
-	    console.log("Removing child ");
+	    //console.log("Removing child ");
 	    dom.removeChild(dkids[len]);
 	}
     }
     else if (vkids.length > len) {
 	for (var i = len; i < vkids.length; i++) {
-	    console.log("Appending new child ");
+	    //console.log("Appending new child ");
 	    dom.appendChild(build(vkids[i]));
 	}
     }
