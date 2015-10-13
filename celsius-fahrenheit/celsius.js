@@ -8,8 +8,8 @@ var m = {
 };
 
 function run() {
-    setup(c2f, m);
-}
+    setup(c2f, m, 'root');
+} 
 
 function toF(c) {
     return Math.round(c * 9.0/5.0 + 32);
