@@ -1,6 +1,15 @@
 
 "use strict";
 
+/*
+ * TODO:
+ * - don't build vnode when handling event.
+ * - make `here` more robust
+ * - optimize use of ids in lists
+ * - eliminate .class/#id parsing
+ * - support key-based patching (attr `key`)
+ */
+
 class TrimGUI {
     constructor (app, model, root) {
 	this.app = app;
@@ -134,17 +143,18 @@ class TrimGUI {
 
     here(func, block) {
 	var pos = this.focus.length;
-	return block(() => {
-	    var parent = this.focus;
-	    this.focus = [];
+	var self = this;
+	return block(function () { // because arguments.
+	    var parent = self.focus;
+	    self.focus = [];
 	    try {
 		return func.apply(null, arguments);
 	    }
 	    finally {
-		for (var i = 0; i < this.focus.length; i++) {
-		    parent.splice(pos + i, 0, this.focus[i]);
+		for (var i = 0; i < self.focus.length; i++) {
+		    parent.splice(pos + i, 0, self.focus[i]);
 		}
-		this.focus = parent;
+		self.focus = parent;
 	    }
 	});
     }
@@ -350,7 +360,6 @@ class TrimGUI {
     }
 
     defaultAttrs(x, y, z) {
-	
 	if (typeof x === "function") {
 	    return {};
 	}
