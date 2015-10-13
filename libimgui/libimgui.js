@@ -194,18 +194,14 @@ class TrimGUI {
 
     after(id, delay) {
 	if (this.timers.hasOwnProperty(id)) {
-	    if (this.timers[id]) {
-		return true;
-	    }
-	    return false;
+	    return this.timers[id];
 	}
-	else {
-	    this.timers[id] = false;
-	    window.setTimeout(() => {
-		this.timers[id] = true;
-		this.doRender();
-	    }, delay);
-	}
+
+	this.timers[id] = false;
+	window.setTimeout(() => {
+	    this.timers[id] = true;
+	    this.doRender();
+	}, delay);
     }
 
 
@@ -226,7 +222,7 @@ class TrimGUI {
 	    }
 	    label = label || optValue;
 	    return self.withElement("option", attrs, () => {
-		text(label);
+		self.text(label);
 	    });
 	}
 	
@@ -390,6 +386,9 @@ class TrimGUI {
 
 
 /*
+
+The following functions don't access TrimGUI state, but simply
+patch the real dom (1st arg) based on the vdom (2nd arg).
 
 vdom element
 {tag:
