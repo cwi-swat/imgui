@@ -167,7 +167,7 @@ function cartView(cart) {
 		});
 	    }
 	});
-	span("Total: € " + cart.total); //.replace(/(\.\d\d)\d*/,"$1"));
+	span(("Total: € " + cart.total).replace(/(\.\d\d)\d*/,"$1"));
     });
 }
 
