@@ -76,9 +76,9 @@ function app(model) {
 }
 
 function shopDemoView(articles, cart) {
-    ig.table(function() {
-	ig.tr(function () {
-	    ig.td({colspan: 2}, function () {
+    ig.table(() => {
+	ig.tr(() => {
+	    ig.td({colspan: 2}, () => {
 		if (ig.button("update some items")) {
 		    update(articles);
 		}
@@ -87,12 +87,12 @@ function shopDemoView(articles, cart) {
 		}
 	    });
 	});
-	ig.tr(function () {
-	    ig.td(function() {
+	ig.tr(() => {
+	    ig.td(() => {
 		ig.h2("Available items");
 		articlesView(cart, articles);
 	    });
-	    ig.td(function() {
+	    ig.td(() => {
 		ig.h2("Your shopping cart");
 		cartView(cart);
 	    });
@@ -120,12 +120,12 @@ function update(articles) {
 }
 
 function articlesView(cart, articles) {
-    ig.div(function () {
+    ig.div(() => {
 	if (ig.button("new article")) {
 	    articles.push(new Article(prompt("Article name"),
 				      prompt("Price (please fill in a number)")));
 	}
-	ig.ul(function () {
+	ig.ul(() => {
 	    for (var i = 0; i < articles.length; i++) {
 		articleView(cart, articles, articles[i], i);
 	    }
@@ -134,12 +134,10 @@ function articlesView(cart, articles) {
 }
 
 function articleView(cart, articles, article, i) {
-    ig.li(function() {
+    ig.li(() => {
 	ig.span(article.name);
 	if (ig.button(">>")) {
-	    var existingEntry = cart.entries.find(function(entry) {
-		return entry.article === article;
-            });
+	    var existingEntry = cart.entries.find(entry => entry.article === article);
             if (existingEntry) {
 		existingEntry.amount += 1;
             }
@@ -158,11 +156,11 @@ function articleView(cart, articles, article, i) {
 
 
 function cartView(cart) {
-    ig.div(function () {
-	ig.ul(function() {
+    ig.div(() => {
+	ig.ul(() => {
 	    for (var i = 0; i < cart.entries.length; i++) {
 		var entry = cart.entries[i];
-		ig.li(function () {
+		ig.li(() => {
 		    if (ig.button("<<")) {
 			if (--entry.amount < 1) {
 			    cart.entries.splice(cart.entries.indexOf(entry), 1);
