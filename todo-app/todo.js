@@ -10,88 +10,42 @@ var todos = {
         {label: "Buy milk", done: false},
         {label: "Send postcard", done: true},
         {label: "Finish annual report", done: false}
-    ]
+    ],
+    newTodo: ""
 };
 
 function run() {
-    setup(todoApp, todos);
+    setup(todoApp, todos, 'root');
 }
 
 
-var todoApp = component({newTodo: "", errors: []}, function todoApp(self, model) {
+function todoApp(model) {
 
     h2("Todo App");
 
 
     function todoView(item) {
 	item.done = checkBox(item.done);
-	item.label = editableLabel(item, item.label);
+	text(item.label);
     }
+        
+    editableList(model.items, todoView);
     
-    
-    var newTodo = {done: false, label: "New todo"};
-    editableList(model.items, todoView, newTodo);
-
     if (button("Add")) {
-	self.errors = [];
-	if (self.newTodo[0].toUpperCase() !== self.newTodo[0]) {
-	    self.errors.push("Need to be capitalized");
-	}
-	else {
-            model.items.push({label: self.newTodo, done: false});
-            self.newTodo = "";
-	}
+        model.items.push({label: model.newTodo, done: false});
+        model.newTodo = "";
     }
     
-    self.newTodo = textBox(self.newTodo);
-    for (var i = 0; i < self.errors.length; i++) {
-	br();
-	p(self.errors[i]);
-    }
+    model.newTodo = textBox(model.newTodo);
 
-    p(JSON.stringify(memo));
-    
-});
+    pre(function() {
+	text(JSON.stringify(model, null, '  '));
+    });
+}
 
 
 
-
-var editableLabel = component({editing: false}, function editableLabel(self, _, txt) {
-    var result = txt;
-
-    function setFocus(elt) {
-	elt.focus();
-    }
-    
-    if (self.editing) {
-	on("input", ["blur"], {type: "text", value: txt, extra: setFocus}, function (ev) {
-	    if (ev) {
-		self.editing = false;
-		result = ev.target.value;
-	    }
-	});
-    }
-    else {
-	on("span", ["dblclick"], {}, function (ev) {
-	    if (ev) {
-		self.editing = true;
-	    }
-	    text(txt);
-	});
-    }
-
-    return result;
-});
-
-
-
-function editableList(xs, renderx, newx) {
-
-    if (xs.length == 0 && button(" + ")) {
-	xs[0] = clone(newx);
-	return xs;
-    }
-
+function editableList(xs, renderx) {
     function move(idx, dir) {
 	var elt = xs[idx];
         xs.splice(idx, 1);
