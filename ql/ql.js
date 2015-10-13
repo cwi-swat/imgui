@@ -62,21 +62,22 @@ function questionEditor(q) {
     imgui.fieldset(function() {
 	imgui.label("Name: ");
 	q.name = imgui.textbox(q.name);
+
 	imgui.label("Label: ");
 	q.label = imgui.textbox(q.label);
 
 	imgui.label("Type: ");
 	var types = ["Integer", "String", "Boolean"];
 
-	q.type = imgui.select(q.type, function () {
+	q.type = imgui.select(q.type, function (option) {
 	    for (var i = 0; i < types.length; i++) {
-		var selected = types[i] === q.type;
-		imgui.option(types[i], types[i], selected);
+		option(types[i]);
 	    }
 	});
 
 	imgui.text(" ");
 	q.computed = imgui.checkbox(q.computed);
+
 	if (q.computed) {
 	    imgui.label("Expression: ");
 	    q.expr = imgui.textbox(q.expr || "<expr>");
