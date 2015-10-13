@@ -12,28 +12,36 @@ var autoNumber = 0;
  * Data model
  */
 
-function Article(name, price) {
-    this.id = ++autoNumber; // UUID for this article
-    this.name = name;
-    this.price = price;
+class Article {
+    constructor (name, price) {
+	this.id = ++autoNumber; // UUID for this article
+	this.name = name;
+	this.price = price;
+    }
 }
 
-function ShoppingCartEntry(article) {
-    this.id = ++autoNumber; // UUID for this entry
-    this.article = article;
-    this.amount = 1;
-    this.price = function() {
+class ShoppingCartEntry {
+    constructor (article) {
+	this.id = ++autoNumber; // UUID for this entry
+	this.article = article;
+	this.amount = 1;
+    }
+
+    get price() {
         return this.article ? this.article.price * this.amount : 0;
-    };
+    }
 }
 
-function ShoppingCart() {
-    this.entries = [];
-    this.total = function() {
+class ShoppingCart {
+    constructor () {
+	this.entries = [];
+    }
+
+    get total() {
         return this.entries.reduce(function(sum, entry) {
-            return sum + entry.price();
+            return sum + entry.price;
         }, 0);
-    };
+    }
 }
 
 // Some available articles
@@ -108,7 +116,8 @@ function update(articles) {
 function articlesView(cart, articles) {
     div(function () {
 	if (button("new article")) {
-	    articles.push(new Article(prompt("Article name"), prompt("Price (please fill in a number)")));
+	    articles.push(new Article(prompt("Article name"),
+				      prompt("Price (please fill in a number)")));
 	}
 	ul(function () {
 	    for (var i = 0; i < articles.length; i++) {
@@ -134,11 +143,10 @@ function articleView(cart, articles, article, i) {
 	    
 	}
 	if (button("edit")) {
-            article.name = prompt("New name", this.props.article.name);
-            article.price = parseInt(prompt("New price", this.props.article.price), 10);
+            article.name = prompt("New name", article.name);
+            article.price = parseInt(prompt("New price", article.price), 10);
 	}
-	// {class: "price"}, 
-	span("€ " + article.price);
+	span("€ " + article.price, ".price");
     });
 }
 
@@ -155,12 +163,11 @@ function cartView(cart) {
 			}
 		    }
 		    span(entry.article.name);
-		    // {class: "price"}
-		    span(entry.amount + "x"); 
+		    span(entry.amount + "x", ".price"); 
 		});
 	    }
 	});
-	span("Total: € " + cart.total()); //.replace(/(\.\d\d)\d*/,"$1"));
+	span("Total: € " + cart.total); //.replace(/(\.\d\d)\d*/,"$1"));
     });
 }
 
