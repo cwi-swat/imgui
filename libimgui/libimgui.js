@@ -1,5 +1,5 @@
 
-"use strict";
+'use strict';
 
 /*
  * TODO:
@@ -18,7 +18,7 @@ class TrimGUI {
 	this.event = null;
 	this.focus = [];
 	this.node = null;
-	this.extras = {};
+	this.onMounts = {};
 	this.timers = {};
 	this.handlers = {};
 	this.ids = 0;
@@ -54,7 +54,7 @@ class TrimGUI {
 		this.handlers[k] = [];
 	    }
 	}
-	this.extras = {};
+	this.onMounts = {};
 	this.focus = [];
 	this.ids = 0;
     }
@@ -86,9 +86,9 @@ class TrimGUI {
 	}
 	this.node = node;
 	
-	for (var id in this.extras) {
-	    if (this.extras.hasOwnProperty(id)) {
-		var doSomething = this.extras[id];
+	for (var id in this.onMounts) {
+	    if (this.onMounts.hasOwnProperty(id)) {
+		var doSomething = this.onMounts[id];
 		var elt = document.getElementById(id);
 		doSomething(elt);
 	    }
@@ -101,36 +101,37 @@ class TrimGUI {
 	this.doRender();
     }
 
-    withElement(elt, attrs, func, evs) {
-	// TODO: if this.pretend, don't build vnodes
-	var parent = this.focus;
-	this.focus = [];
-	try {
-	    return func();
-	}
-	finally {
-	    if (attrs && attrs['extra']) {
-		this.extras[attrs['id']] = attrs['extra'];
-		delete attrs['extra'];
+
+    attrs(as) {
+	for (var a in as) {
+	    if (as.hasOwnProperty(a)) {
+		this.attrs[a] = as[a];
 	    }
-	    var vnode = {tag: elt, attrs: attrs, kids: this.focus};
-	    parent.push(vnode);
-	    this.focus = parent;
-	}    
+	}
+	return this;
     }
 
-    on(elt, events, attrs, block) {
-	attrs = attrs || {};
-	var id = attrs["id"] || ("id" + this.ids++);
-	attrs["id"] = id;
+    attr(n, x) {
+	return attrs({n: x});
+    }
+    
+    klass(x) {
+	return attr('class', x);
+    }
+
+    id(x) {
+	return attr('id', x);
+    }
+
+    
+    on(elt, events, block) {
+	var attrs = this.attrs;
+	var id = attrs['id'] || ('id' + this.ids++);
+	attrs['id'] = id;
+
+	events.forEach(e => this.register(e, id));
 	
-	
-	//this.handlers[id] = [];
-	for (var i = 0; i < events.length; i++) {
-	    this.register(events[i], id);
-	}
-	
-	return this.withElement(elt, attrs, () => {
+	return this.withElement(elt, () => {
 	    var event = this.event;
 	    if (event && event.target.getAttribute('id') === id) {
 		this.event = undefined; // maybe do in toplevel???
@@ -138,6 +139,34 @@ class TrimGUI {
 	    }
 	    return block();
 	});
+    }
+
+    withElement(elt, func, evs) {
+	// TODO: if this.pretend, don't build vnodes
+	var parent = this.focus;
+	this.focus = [];
+
+	// Copy the current attribute set
+	var myAttrs = {};
+	for (var a in this.attrs) {
+	    if (this.attrs.hasOwnProperty(a)) {
+		myAttrs[a] = this.attrs[a];
+	    }
+	}
+	this.attrs = {}; // kids don't inherit attrs.
+	
+	try {
+	    return func();
+	}
+	finally {
+	    if (myAttrs && myAttrs['onMount']) {
+		this.onMounts[myAttrs['id']] = this.myAttrs['onMount'];
+		delete myAttrs['onMount'];
+	    }
+	    var vnode = {tag: elt, attrs: myAttrs, kids: this.focus};
+	    parent.push(vnode);
+	    this.focus = parent;
+	}    
     }
 
 
@@ -162,41 +191,47 @@ class TrimGUI {
 
     // dom elements
 
-    textarea(value, attrs) {
-	attrs = attrs || {};
-	
-	return this.on("textarea", ["keyup", "blur"], attrs, ev => {
+    content(c, ev) {
+	if (typeof c === 'function') {
+	    c.apply(undefined, ev);
+	}
+	if (typeof c === 'string') {
+	    this.text(c);
+	}
+    }
+    
+    textarea(x) {
+	return this.on('textarea', ['keyup', 'blur'], ev => {
 	    var newValue = ev ? ev.target.value : value;
-	    this.text(value);
+	    this.content(x, ev);
 	    return newValue;
 	});
     }
     
-    textBox(value, attrs) {
-	attrs = attrs || {};
+    textBox(value) {
+	var attrs = {};
 	attrs.type = 'text';
 	attrs.value = value;
-	attrs.extra = function (elt) {
+	attrs.onMount = elt => {
     	    elt.value = value;
 	};
 	
-    
-	return this.on("input", ["input"], attrs, ev => {
+	return this.attrs(attrs).on('input', ['input'], ev => {
 	    return ev ? ev.target.value : value;
 	});
     }
 
-    checkBox(value, attrs) {
-	attrs = attrs || {};
-	attrs.type = "checkbox";
+    checkBox(value) {
+	var attrs = attrs || {};
+	attrs.type = 'checkbox';
 	if (value) {
-	    attrs.checked = "true";
+	    attrs.checked = 'true';
 	}
-	attrs.extra = function (elt) {
+	attrs.onMount = elt => {
 	    elt.checked = value;
 	};
 	
-	return this.on("input", ["click"], attrs, function(ev) {
+	return this.attrs(attrs).on('input', ['click'], ev => {
 	    return ev ? ev.target.checked : value;
 	});
     }
@@ -215,15 +250,22 @@ class TrimGUI {
     }
 
 
-    button(label, attrs) {
-	return this.on("button", ["click"], attrs, ev => {
-	    this.text(label);
+    aclick(x) {
+	return this.on('a', ['click'], ev => {
+	    this.content(x, ev);
+	    return ev !== undefined;
+	});
+    }
+    
+    button(x) {
+	return this.on('button', ['click'], ev => {
+	    this.content(x, ev);
 	    return ev !== undefined;
 	});
     }
     
 
-    select(value, x, y, z) {
+    select(value, block) {
 	var self = this;
 	function option(optValue, label) {
 	    var attrs = {value: optValue};
@@ -231,13 +273,10 @@ class TrimGUI {
 		attrs['selected'] = true;
 	    }
 	    label = label || optValue;
-	    return self.withElement("option", attrs, () => {
-		self.text(label);
-	    });
+	    return self.attrs(attrs).withElement('option', () => self.text(label));
 	}
 	
-	var block = this.extractBlock(arguments);
-	return this.on("select", ["change"], this.defaultAttrs(x, y, z), ev => {
+	return this.on('select', ['change'], ev => {
 	    block(option);
 	    return ev  
 		? ev.target.options[ev.target.selectedIndex].value
@@ -245,19 +284,19 @@ class TrimGUI {
 	});
     }
     
-    radioGroup(value,  x, y, z) {
+    radioGroup(value, block) {
 	var result = value;
 	var name = 'name' + (this.ids++);
 	function radio(radioValue, label) {
-	    var attrs = {type: "radio", name: name};
+	    var attrs = {type: 'radio', name: name};
 	    if (radioValue === value) {
 		attrs['checked'] = true;
 	    }
-	    attrs.extra = function (elt) {
+	    attrs.onMount = function (elt) {
 		elt.checked = (radioValue === value);
 	    };
-	    return this.on("label", [], {}, () => {
-		this.on("input", ["click"], attrs, ev => {
+	    return this.on('label', [], () => {
+		this.attrs(attrs).on('input', ['click'], ev => {
 		    if (ev) {
 			result = radioValue;
 		    }
@@ -268,25 +307,18 @@ class TrimGUI {
 	    });
 	}
 	
-	var block = this.extractBlock(arguments);
 	block(radio);
 	return result;
     }
 
     label(txt) {
 	// FIXME: this is extremely brittle.
-	var id = "id" + (this.ids + 1); // NB: not ++ !!
-	return this.withElement("label", {"for": id}, function () {
-	    this.text(txt);
-	});
+	var id = 'id' + (this.ids + 1); // NB: not ++ !!
+	return this.attr('for', id).withElement('label', () => this.text(txt));
     }
     
     text(txt) {
 	this.focus.push(txt);
-    }
-
-    br() {
-	this.withElement("br", {}, function() {});
     }
 
     addInputElements() {
@@ -303,16 +335,15 @@ class TrimGUI {
 	    weekPicker: {type: 'week', event: 'change'},
 	    timePicker: {type: 'time', event: 'change'}
 	}
-	var self = this;
 	for (var name in basicInputs) {
 	    if (basicInputs.hasOwnProperty(name)) {
-		(function (name) {
-		    self[name] = function (value, attrs) {
+		(name => {
+		    this[name] = (value, attrs) => {
 			attrs = attrs || {};
 			attrs['type'] = basicInputs[name].type;
 			attrs['value'] = value;
 			
-			return self.on("input", [basicInputs[name].event], attrs, function(ev) {
+			return this.attrs(attrs).on('input', [basicInputs[name].event], function(ev) {
 			    return ev ? ev.target.value : value;
 			});
 		    }
@@ -321,76 +352,16 @@ class TrimGUI {
 	}
     }
 
-    addInlineElements() {
-	var elts = ["a", "p", "span", "h1", "h2", "h3", "h4"];
-	var self = this;
-	for (var i = 0; i < elts.length; i++) {
-	    this[elts[i]] = (elt => {
-		return (txt, idClass, attrs) => {
-		    this.withElement(elt, this.defaultAttrs(idClass, attrs), () => {
-			this.text(txt);
-		    });
-		}
-	    })(elts[i]);
-	}
+    addSimpleElements() {
+	// Currently, these don't have events.
+	['a', 'strong', 'br', 'span', 'h1', 'h2', 'h3', 'h4',
+	 'section', 'div', 'ul', 'ol', 'li', 'header', 'footer', 'code', 'pre',
+	 'dl', 'dt', 'dd', 'fieldset', 'table', 'td', 'tr', 'th', 'col', 'thead']
+	    .forEach(function (elt) {
+		this[elt] = (elt => (x => this.withElement(elt, () => this.content(x))))(elt);
+	    });
     }
-    
-    extractBlock(args) {
-	for (var i = 0; i < args.length; i++) {
-	    if ((typeof args[i]) === "function") {
-		return args[i];
-	    }
-	}
-	return function() {};
-    }
-    
-    
-    addBlockElements() {
-	var elts = ["section", "div", "ul", "ol", "li", "header", "footer", "code", "pre",
-		    "dl", "dt", "dd", "fieldset", "table", "td", "tr", "th", "col", "thead"];
-	var self = this;
-	for (var i = 0; i < elts.length; i++) {
-	    this[elts[i]] = ((elt) => {
-		return function (x, y, z) { // cannot use => because arguments.
-		    return self.withElement(elt, self.defaultAttrs(x, y, z),
-					    self.extractBlock(arguments));
-		}
-	    })(elts[i]);
-	}
-    }
-
-    defaultAttrs(x, y, z) {
-	if (typeof x === "function") {
-	    return {};
-	}
-	
-	var attrs = {};
-	var idClass;
-	if (typeof x === "string") {
-	    idClass = x;
-	    if (typeof y == "object") {
-		attrs = y;
-	    }
-	}
-	else if (typeof x === "object") {
-	    attrs = x;
-	}
-	
-	if (!idClass) {
-	    return attrs;
-	}
-	
-	var hash = idClass.indexOf("#");
-	var dot = idClass.indexOf(".");
-	if (dot > -1) {
-	    attrs['class'] = idClass.slice(dot + 1, hash > -1 ? hash : idClass.length);
-	}
-	if (hash > -1) {
-	    attrs['id'] = idClass.slice(hash + 1);
-	}
-	return attrs;
-    }
-    
+        
 }
 
 
@@ -407,9 +378,9 @@ vdom element
 */
 
 function compat(d, v) {
-    //console.log("Compat? ");
-    //console.log("d = " + d.nodeValue);
-    //console.log("v = " + JSON.stringify(v));
+    //console.log('Compat? ');
+    //console.log('d = ' + d.nodeValue);
+    //console.log('v = ' + JSON.stringify(v));
     return (d.nodeType === Node.TEXT_NODE && (typeof v !== 'object'))
 	|| (d.tagName === v.tag.toUpperCase());
 }
@@ -417,7 +388,7 @@ function compat(d, v) {
 
 function reconcile(dom, vdom) {
     if (!compat(dom, vdom)) {
-	throw "Can only reconcile compatible nodes";
+	throw 'Can only reconcile compatible nodes';
     }
     
     // Text nodes
@@ -436,12 +407,12 @@ function reconcile(dom, vdom) {
 	    if (dom.hasAttribute(vattr)) {
 		var dattr = dom.getAttribute(vattr);
 		if (dattr !== vattrs[vattr].toString()) { 
-		    //console.log("Updating attribute: " + vattr + " = " + vattrs[vattr]);
+		    //console.log('Updating attribute: ' + vattr + ' = ' + vattrs[vattr]);
 		    dom.setAttribute(vattr, vattrs[vattr]);
 		}
 	    }
 	    else {
-		//console.log("Adding attribute: " + vattr + " = " + vattrs[vattr]);
+		//console.log('Adding attribute: ' + vattr + ' = ' + vattrs[vattr]);
 		dom.setAttribute(vattr, vattrs[vattr]);
 	    }
 	}
@@ -450,7 +421,7 @@ function reconcile(dom, vdom) {
     for (var i = 0; i < dom.attributes.length; i++) {
 	var dattr = dom.attributes[i];
 	if (!vattrs.hasOwnProperty(dattr.nodeName)) {
-	    //console.log("Removing attribute: " + dattr.nodeName);
+	    //console.log('Removing attribute: ' + dattr.nodeName);
 	    dom.removeAttribute(dattr.nodeName);
 	}
     }
@@ -468,20 +439,20 @@ function reconcileKids(dom, dkids, vkids) {
 	    reconcile(dkid, vkid);
 	}
 	else {
-	    //console.log("Replacing child");
+	    //console.log('Replacing child');
 	    dom.replaceChild(build(vkid), dkid);
 	}
     }
     
     if (dkids.length > len) {
 	while (dkids.length > len) {
-	    //console.log("Removing child ");
+	    //console.log('Removing child ');
 	    dom.removeChild(dkids[len]);
 	}
     }
     else if (vkids.length > len) {
 	for (var i = len; i < vkids.length; i++) {
-	    //console.log("Appending new child ");
+	    //console.log('Appending new child ');
 	    dom.appendChild(build(vkids[i]));
 	}
     }
@@ -489,7 +460,7 @@ function reconcileKids(dom, dkids, vkids) {
 
 function build(vdom) {
     if (vdom === undefined) {
-	return document.createTextNode("");
+	return document.createTextNode('');
     }
     if (typeof vdom !== 'object') {
 	return document.createTextNode(vdom.toString());
