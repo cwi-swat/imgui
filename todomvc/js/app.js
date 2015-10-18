@@ -9,14 +9,43 @@ class Todos {
 	this.newTodo = '';
 	this.filter = x => true;
     }
+
+    createTodo(value) {
+	this.todos.push(new Todo(value, this, this.todos.length));
+    }
+    
+    adjust(index) {
+	for (let i = index; i < this.todos.length; i++) {
+	    this.todos[i].index--;
+	}
+    }
 }
 
 class Todo {
-    constructor (text) {
+    constructor (text, parent, index) {
 	this.text = text;
 	this.completed = false;
 	this.editing = false;
+	this.parent = parent;
+	this.index = index;
     }
+
+    save(value) {
+	let txt = value.trim();
+	if (txt !== '') {
+	    this.text = txt;
+	}
+	else {
+	    this.destroy();
+	}
+    }
+
+    destroy() {
+	this.parent.todos.splice(this.index, 1);
+	this.parent.adjust(this.index);
+    }
+
+	
 }
 
 var model = new Todos();
@@ -34,10 +63,10 @@ function newTodo(model) {
 	     placeholder: 'What needs to be done?',
 	     onMount: elt => {elt.value=model.newTodo;}};
     
-    ig.attrs(attrs).on("input", ['keypress'], ev => {
+    ig.attrs(attrs).on("input", ['keyup'], ev => {
 	if (ev) {
 	    if (ev.keyCode === ENTER_KEY) {
-		model.todos.push(new Todo(ev.target.value));
+		model.createTodo(ev.target.value);
 		model.newTodo = '';
 	    }
 	    else if (ev.keyCode === ESCAPE_KEY) {
@@ -95,7 +124,7 @@ function mainSection(todos) {
 	    for (let i = 0; i < model.todos.length; i++) {
 		let todo = model.todos[i];
 		if (model.filter(todo)) {
-		    showTodo(todos, todo, i);
+		    showTodo(todo);
 		}
 	    }
 	});
@@ -133,7 +162,7 @@ function footer(model) {
 	    for (let i = 0; i < len; i++) {
 		let todo = model.todos[i - j];
 		if (todo.completed) {
-		    model.todos.splice(i - j, 1);
+		    todo.destroy(); //model.todos.splice(i - j, 1);
 		    j++;
 		}
 	    }
@@ -141,57 +170,60 @@ function footer(model) {
     });
 }
 
-function showTodo(todos, todo, idx) {
+function showTodo(todo) {
     let cls = todo.completed ? 'completed' :  '';
     cls += todo.editing ? ' editing' : '';
     let attrs = cls ? {'class': cls.trim()} : {};
 
-    function save(value) {
-	let txt = value.trim();
-	if (txt !== '') {
-	    todo.text = txt;
-	}
-	else {
-	    todos.splice(idx, 1);
-	}
-    }
-    
     ig.attrs(attrs).li(() => {
-	ig.klass('view').div(() => {
-	    todo.completed = ig.klass('toggle').checkBox(todo.completed);
-	    ig.on('label', ['dblclick'], ev => {
-		if (ev) {
-		    todo.editing = true;
-		}
-		ig.text(todo.text);
-	    });
-	    if (ig.klass('destroy').button()) {
-		todos.splice(idx, 1);
-	    }
-	});
+	viewTodo(todo);
 	if (todo.editing) {
-	    ig.klass('edit')
-		.attr('value', todo.text)
-		.attr('onMount', e => e.focus())
-		.on('input', ['keyup', 'focusout'], ev => {
-		    if (ev) {
-			if (ev.type === 'keyup') {
-			    if (ev.keyCode === ENTER_KEY) {
-				todo.editing = false;
-				save(ev.target.value);
-			    }
-			    if (ev.keyCode === ESCAPE_KEY) {
-				todo.editing = false;
-			    }
-			}
-			if (ev.type === 'focusout') {
-			    todo.editing = false;
-			    save(ev.target.value);
-			}
-		    }
-		});
+	    editTodo(todo);
 	}
     });
 }
+
+
+function viewTodo(todo) {
+    ig.klass('view').div(() => {
+	todo.completed = ig.klass('toggle').checkBox(todo.completed);
+	ig.on('label', ['dblclick'], ev => {
+	    if (ev) {
+		todo.editing = true;
+	    }
+	    ig.text(todo.text);
+	});
+	if (ig.klass('destroy').button()) {
+	    todo.destroy();
+	}
+    });
+}
+
+function editTodo(todo) {
+    ig.klass('edit')
+	.attr('value', todo.text)
+	.attr('onMount', e => e.focus())
+	.on('input', ['keyup', 'focusout'], ev => {
+	    if (ev) {
+		if (ev.type === 'keyup') {
+		    if (ev.keyCode === ENTER_KEY) {
+			todo.editing = false;
+			todo.save(ev.target.value);
+		    }
+		    if (ev.keyCode === ESCAPE_KEY) {
+			todo.editing = false;
+		    }
+		}
+		if (ev.type === 'focusout') { // blur doesn't bubble up....
+		    todo.editing = false;
+		    todo.save(ev.target.value);
+		}
+	    }
+	});
+}
+
+
+
+
 
 module.exports = ig;
