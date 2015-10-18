@@ -1,0 +1,6 @@
+{
+    "private": true,
+    "dependencies": {
+	"libimgui": "1.0.0"
+    }
+}

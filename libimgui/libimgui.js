@@ -188,6 +188,10 @@ class TrimGUI {
     text(txt) {
 	this.focus.push(txt);
     }
+
+    nextId() {
+	return this.ids + 1;
+    }
     
     
     // convenience
@@ -317,12 +321,11 @@ class TrimGUI {
 	return result;
     }
 
-    label(txt) {
-	// FIXME: this is extremely brittle.
-	var id = 'id' + (this.ids + 1); // NB: not ++ !!
-	return this.attr('for', id).withElement('label', () => this.text(txt));
-    }
-    
+    // label(txt) {
+    // 	// FIXME: this is extremely brittle.
+    // 	var id = 'id' + (this.ids + 1); // NB: not ++ !!
+    // 	return this.attr('for', id).withElement('label', () => this.text(txt));
+    // }
 
     addInputElements() {
 	var basicInputs = {
@@ -352,7 +355,7 @@ class TrimGUI {
 
     addSimpleElements() {
 	// Currently, these don't have events.
-	['a', 'strong', 'br', 'span', 'h1', 'h2', 'h3', 'h4',
+	['a', 'p', 'label', 'strong', 'br', 'span', 'h1', 'h2', 'h3', 'h4',
 	 'section', 'div', 'ul', 'ol', 'li', 'header', 'footer', 'code', 'pre',
 	 'dl', 'dt', 'dd', 'fieldset', 'table', 'td', 'tr', 'th', 'col', 'thead']
 	    .forEach(elt => 
