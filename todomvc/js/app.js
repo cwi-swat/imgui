@@ -14,11 +14,6 @@ class Todos {
 	this.todos.push(new Todo(value, this, this.todos.length));
     }
     
-    adjust(index) {
-	for (let i = index; i < this.todos.length; i++) {
-	    this.todos[i].index--;
-	}
-    }
 }
 
 class Todo {
@@ -42,7 +37,9 @@ class Todo {
 
     destroy() {
 	this.parent.todos.splice(this.index, 1);
-	this.parent.adjust(this.index);
+	for (let i = this.index; i < this.parent.todos.length; i++) {
+	    this.parent.todos[i].index--;
+	}
     }
 
 	
@@ -66,8 +63,11 @@ function newTodo(model) {
     ig.attrs(attrs).on("input", ['keyup'], ev => {
 	if (ev) {
 	    if (ev.keyCode === ENTER_KEY) {
-		model.createTodo(ev.target.value);
-		model.newTodo = '';
+		let txt = ev.target.value.trim();
+		if (txt !== '') {
+		    model.createTodo(ev.target.value);
+		    model.newTodo = '';
+		}
 	    }
 	    else if (ev.keyCode === ESCAPE_KEY) {
 		model.newTodo = '';
