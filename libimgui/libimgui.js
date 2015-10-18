@@ -22,8 +22,8 @@ class TrimGUI {
 	this.timers = {};
 	this.handlers = {};
 	this.ids = 0;
-	this.addInlineElements();
-	this.addBlockElements();
+	this.attributes = {};
+	this.addSimpleElements();
 	this.addInputElements();
     }
 
@@ -105,33 +105,19 @@ class TrimGUI {
     attrs(as) {
 	for (var a in as) {
 	    if (as.hasOwnProperty(a)) {
-		this.attrs[a] = as[a];
+		this.attributes[a] = as[a];
 	    }
 	}
 	return this;
     }
 
-    attr(n, x) {
-	return attrs({n: x});
-    }
-    
-    klass(x) {
-	return attr('class', x);
-    }
-
-    id(x) {
-	return attr('id', x);
-    }
 
     
     on(elt, events, block) {
-	var attrs = this.attrs;
-	var id = attrs['id'] || ('id' + this.ids++);
-	attrs['id'] = id;
-
+	var id = this.attributes['id'] || ('id' + this.ids++);
 	events.forEach(e => this.register(e, id));
 	
-	return this.withElement(elt, () => {
+	return this.id(id).withElement(elt, () => {
 	    var event = this.event;
 	    if (event && event.target.getAttribute('id') === id) {
 		this.event = undefined; // maybe do in toplevel???
@@ -148,20 +134,20 @@ class TrimGUI {
 
 	// Copy the current attribute set
 	var myAttrs = {};
-	for (var a in this.attrs) {
-	    if (this.attrs.hasOwnProperty(a)) {
-		myAttrs[a] = this.attrs[a];
+	for (var a in this.attributes) {
+	    if (this.attributes.hasOwnProperty(a)) {
+		myAttrs[a] = this.attributes[a];
 	    }
 	}
-	this.attrs = {}; // kids don't inherit attrs.
+	this.attributes = {}; // kids don't inherit attrs.
 	
 	try {
 	    return func();
 	}
 	finally {
-	    if (myAttrs && myAttrs['onMount']) {
-		this.onMounts[myAttrs['id']] = this.myAttrs['onMount'];
-		delete myAttrs['onMount'];
+	    if (myAttrs && myAttrs.onMount) {
+		this.onMounts[myAttrs['id']] = myAttrs.onMount;
+		delete myAttrs.onMount;
 	    }
 	    var vnode = {tag: elt, attrs: myAttrs, kids: this.focus};
 	    parent.push(vnode);
@@ -189,8 +175,6 @@ class TrimGUI {
     }
 
 
-    // dom elements
-
     content(c, ev) {
 	if (typeof c === 'function') {
 	    c.apply(undefined, ev);
@@ -199,7 +183,29 @@ class TrimGUI {
 	    this.text(c);
 	}
     }
+
+
+    text(txt) {
+	this.focus.push(txt);
+    }
     
+    
+    // convenience
+
+    attr(n, x) {
+	var obj = {};
+	obj[n] = x;
+	return this.attrs(obj);
+    }
+    
+    klass(x) {
+	return this.attr('class', x);
+    }
+
+    id(x) {
+	return this.attr('id', x);
+    }
+
     textarea(x) {
 	return this.on('textarea', ['keyup', 'blur'], ev => {
 	    var newValue = ev ? ev.target.value : value;
@@ -317,9 +323,6 @@ class TrimGUI {
 	return this.attr('for', id).withElement('label', () => this.text(txt));
     }
     
-    text(txt) {
-	this.focus.push(txt);
-    }
 
     addInputElements() {
 	var basicInputs = {
@@ -338,15 +341,10 @@ class TrimGUI {
 	for (var name in basicInputs) {
 	    if (basicInputs.hasOwnProperty(name)) {
 		(name => {
-		    this[name] = (value, attrs) => {
-			attrs = attrs || {};
-			attrs['type'] = basicInputs[name].type;
-			attrs['value'] = value;
-			
-			return this.attrs(attrs).on('input', [basicInputs[name].event], function(ev) {
-			    return ev ? ev.target.value : value;
-			});
-		    }
+		    this[name] = value => this
+			.attrs({type: basicInputs[name].type, value: value})
+			.on('input', [basicInputs[name].event],
+			    ev => ev ? ev.target.value : value);
 		})(name);
 	    }
 	}
@@ -357,9 +355,10 @@ class TrimGUI {
 	['a', 'strong', 'br', 'span', 'h1', 'h2', 'h3', 'h4',
 	 'section', 'div', 'ul', 'ol', 'li', 'header', 'footer', 'code', 'pre',
 	 'dl', 'dt', 'dd', 'fieldset', 'table', 'td', 'tr', 'th', 'col', 'thead']
-	    .forEach(function (elt) {
-		this[elt] = (elt => (x => this.withElement(elt, () => this.content(x))))(elt);
-	    });
+	    .forEach(elt => 
+		     (elt => {
+			 this[elt] = x => this.withElement(elt, () => this.content(x));
+		     })(elt));
     }
         
 }

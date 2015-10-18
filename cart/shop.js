@@ -1,5 +1,5 @@
 
-"use strict";
+'use strict';
 
 
 /**
@@ -42,9 +42,9 @@ class ShoppingCart {
 
 // Some available articles
 var articles = [
-    ["Funny Bunnies", 17.63],
-    ["Awesome React", 23.95],
-    ["Second hand Netbook", 50.00]
+    ['Funny Bunnies', 17.63],
+    ['Awesome React', 23.95],
+    ['Second hand Netbook', 50.00]
 ].map(function(e) {
     return new Article(e[0], e[1]);
 });
@@ -79,21 +79,21 @@ function shopDemoView(articles, cart) {
     ig.table(() => {
 	ig.tr(() => {
 	    ig.td({colspan: 2}, () => {
-		if (ig.button("update some items")) {
+		if (ig.button('update some items')) {
 		    update(articles);
 		}
-		if (ig.button("create a lot of items")) {
+		if (ig.button('create a lot of items')) {
 		    generate(articles, cart);
 		}
 	    });
 	});
 	ig.tr(() => {
 	    ig.td(() => {
-		ig.h2("Available items");
+		ig.h2('Available items');
 		articlesView(cart, articles);
 	    });
 	    ig.td(() => {
-		ig.h2("Your shopping cart");
+		ig.h2('Your shopping cart');
 		cartView(cart);
 	    });
 	});
@@ -101,9 +101,9 @@ function shopDemoView(articles, cart) {
 }
 
 function generate(articles, cart) {
-    var amount = parseInt(prompt("How many articles and entries should be created?", 1000));
+    var amount = parseInt(prompt('How many articles and entries should be created?', 1000));
     for(var i = 0; i < amount; i++) {
-        var art = new Article("Generated item " + articles.length, articles.length);
+        var art = new Article('Generated item ' + articles.length, articles.length);
         articles.push(art);
         cart.entries.push(new Entry(art));
     }
@@ -114,16 +114,16 @@ function generate(articles, cart) {
 function update(articles) {
     for(var i = 0; i < 10; i++) {
         var article = articles[Math.floor(Math.random() * articles.length)];
-        article.name += "x";
+        article.name += 'x';
         article.price += 1;
     }
 }
 
 function articlesView(cart, articles) {
     ig.div(() => {
-	if (ig.button("new article")) {
-	    articles.push(new Article(prompt("Article name"),
-				      prompt("Price (please fill in a number)")));
+	if (ig.button('new article')) {
+	    articles.push(new Article(prompt('Article name'),
+				      prompt('Price (please fill in a number)')));
 	}
 	ig.ul(() => {
 	    for (var i = 0; i < articles.length; i++) {
@@ -136,7 +136,7 @@ function articlesView(cart, articles) {
 function articleView(cart, articles, article, i) {
     ig.li(() => {
 	ig.span(article.name);
-	if (ig.button(">>")) {
+	if (ig.button('>>')) {
 	    var existingEntry = cart.entries.find(entry => entry.article === article);
             if (existingEntry) {
 		existingEntry.amount += 1;
@@ -146,11 +146,11 @@ function articleView(cart, articles, article, i) {
 	    }
 	    
 	}
-	if (ig.button("edit")) {
-            article.name = prompt("New name", article.name);
-            article.price = parseInt(prompt("New price", article.price), 10);
+	if (ig.button('edit')) {
+            article.name = prompt('New name', article.name);
+            article.price = parseInt(prompt('New price', article.price), 10);
 	}
-	ig.span("€ " + article.price, ".price");
+	ig.klass('price').span('€ ' + article.price);
     });
 }
 
@@ -161,17 +161,17 @@ function cartView(cart) {
 	    for (var i = 0; i < cart.entries.length; i++) {
 		var entry = cart.entries[i];
 		ig.li(() => {
-		    if (ig.button("<<")) {
+		    if (ig.button('<<')) {
 			if (--entry.amount < 1) {
 			    cart.entries.splice(cart.entries.indexOf(entry), 1);
 			}
 		    }
 		    ig.span(entry.article.name);
-		    ig.span(entry.amount + "x", ".price"); 
+		    ig.klass('price').span(entry.amount + 'x'); 
 		});
 	    }
 	});
-	ig.span(("Total: € " + cart.total).replace(/(\.\d\d)\d*/,"$1"));
+	ig.span(('Total: € ' + cart.total).replace(/(\.\d\d)\d*/,'$1'));
     });
 }
 

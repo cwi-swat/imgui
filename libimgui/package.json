@@ -1,7 +1,7 @@
 {
   "name": "libimgui",
   "version": "1.0.0",
-  "description": "IMGUI",
+  "description": "TrimGUI",
   "main": "libimgui.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -12,7 +12,6 @@
     "mode"
   ],
   "dependencies": {
-    "virtual-dom": "1.0.0"
   },
   "author": "Tijs van der Storm (storm@cwi.nl)",
   "license": "ISC"

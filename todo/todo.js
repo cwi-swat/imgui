@@ -22,7 +22,6 @@ function todoApp(model) {
 
     ig.h2("Todo App");
 
-
     function todoView(item) {
 	item.done = ig.checkBox(item.done);
 	ig.text(item.label);
