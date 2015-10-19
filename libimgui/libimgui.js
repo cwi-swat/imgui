@@ -13,7 +13,7 @@
 class TrimGUI {
     constructor (app, model, root) {
 	this.app = app;
-	this.model = model
+	this.model = model;
 	this.root = root;
 	this.event = null;
 	this.focus = [];
@@ -363,21 +363,21 @@ class TrimGUI {
 			 this[elt] = x => this.withElement(elt, () => this.content(x));
 		     })(elt));
     }
-        
+    
 }
 
 
 /*
 
-The following functions don't access TrimGUI state, but simply
-patch the real dom (1st arg) based on the vdom (2nd arg).
+ The following functions don't access TrimGUI state, but simply
+ patch the real dom (1st arg) based on the vdom (2nd arg).
 
-vdom element
-{tag:
+ vdom element
+ {tag:
  attrs: {} etc.
  kids: [] }
 
-*/
+ */
 
 function compat(d, v) {
     //console.log('Compat? ');
