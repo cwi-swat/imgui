@@ -47,6 +47,10 @@ class Todos {
         }
     }
 
+    filteredTodos() {
+        return this.todos.filter(x => this.shouldShow(x));
+    }
+    
     shouldShow(todo) {
         switch (this.filter) {
         case 'none': return true;
@@ -106,10 +110,6 @@ const ENTER_KEY = 13;
 const ESCAPE_KEY = 27;
 
 function main(model) {
-    wnd.onStorage(ev => {
-        console.log("Storage change: " + ev);
-    });
-    
     if (wnd.inRoute('#/active')) {
         model.filter = 'active';
     }
@@ -168,12 +168,7 @@ function mainSection(model, todos) {
         wnd.attr('for', 'toggle-all').label('Mark all as complete');
         
         wnd.klass('todo-list').ul(() => {
-            for (let i = 0; i < todos.length; i++) {
-                let todo = todos[i];
-                if (model.shouldShow(todo)) {
-                    showTodo(todo);
-                }
-            }
+            model.filteredTodos().forEach(showTodo);
         });
     });
     
@@ -239,6 +234,7 @@ function viewTodo(todo) {
             }
             wnd.text(todo.text);
         });
+        
         if (wnd.klass('destroy').button()) {
             todo.destroy();
         }
@@ -269,9 +265,6 @@ function editTodo(todo) {
             }
         });
 }
-
-
-
 
 
 module.exports = wnd;
