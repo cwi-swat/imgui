@@ -23,6 +23,7 @@ class TrimGUI {
 	this.handlers = {};
 	this.ids = 0;
 	this.attributes = {};
+        this.route = document.location.hash;
 	this.addSimpleElements();
 	this.addInputElements();
     }
@@ -111,7 +112,18 @@ class TrimGUI {
 	return this;
     }
 
-
+    
+    onRoute(hash, block) {
+        console.log('Hello!');
+        if (!this.route) {
+            return;
+        }
+        var route = this.route;
+        this.route = undefined; // only run once.
+        if (route === hash) {
+            block();
+        }
+    }
     
     on(elt, events, block) {
 	var id = this.attributes['id'] || ('id' + this.ids++);
@@ -311,7 +323,7 @@ class TrimGUI {
 			result = radioValue;
 		    }
 		    return radioValue;
-		})
+		});
 		this.text(label || radioValue);
 		return radioValue;
 	    });
@@ -340,7 +352,7 @@ class TrimGUI {
 	    monthPicker: {type: 'week', event: 'change'},
 	    weekPicker: {type: 'week', event: 'change'},
 	    timePicker: {type: 'time', event: 'change'}
-	}
+	};
 	for (var name in basicInputs) {
 	    if (basicInputs.hasOwnProperty(name)) {
 		(name => {
@@ -467,7 +479,7 @@ function build(vdom) {
     if (typeof vdom !== 'object') {
 	return document.createTextNode(vdom.toString());
     }
-
+    
     var elt = document.createElement(vdom.tag);
     var vattrs = vdom.attrs || {};
     for (var k in vattrs) {
