@@ -38,9 +38,21 @@ class Todos {
         this.todos.push(todo);
     }
 
-    deleteTodo(todo) {
-        var idx = this.todos.findIndex(x => x.id === todo.id);
+    deleteTodo(todo, idx) {
+        idx = idx || this.todos.findIndex(x => x.id === todo.id);
         this.todos.splice(idx, 1);
+    }
+
+    clearCompleted() {
+        let j = 0;
+        let len = this.todos.length;
+        for (let i = 0; i < len; i++) {
+            let todo = this.todos[i - j];
+            if (todo.completed) {
+                this.deleteTodo(todo, i - j);
+                j++;
+            }
+        }
     }
 
     filteredTodos() {
@@ -193,15 +205,7 @@ function footer(model) {
         });
         
         if (wnd.klass('clear-completed').button('Clear completed')) {
-            let j = 0;
-            let len = model.todos.length;
-            for (let i = 0; i < len; i++) {
-                let todo = model.todos[i - j];
-                if (todo.completed) {
-                    todo.destroy(); 
-                    j++;
-                }
-            }
+            model.clearCompleted();
         }
     });
 }
