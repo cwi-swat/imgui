@@ -50,16 +50,22 @@ class Todo {
 var model = new Todos();
 
 
-var TrimGUI = require('../../libimgui');
+const TrimGUI = require('libimgui');
 
-var ig = new TrimGUI(main, model, 'todoapp');
+const ig = new TrimGUI(main, model, 'todoapp');
 
 const ENTER_KEY = 13;
 const ESCAPE_KEY = 27;
 
 
 function main(model) {
-    // TODO: interpret routes somehow
+    ig.onRoute('#/active', () => {
+        model.filter = x => !x.completed;
+    });
+
+    ig.onRoute('#/completed', () => {
+        model.filter = x => x.completed;
+    });
     
     ig.klass('todoapp').section(() => {
         ig.klass('header').header(() => {
