@@ -39,12 +39,8 @@ class Todos {
     }
 
     deleteTodo(todo) {
-        for (let i = 0; i < this.todos.length; i++) {
-            if (this.todos[i].id === todo.id) {
-                this.todos.splice(i, 1);
-                break;
-            }
-        }
+        var idx = this.todos.findIndex(x => x.id === todo.id);
+        this.todos.splice(idx, 1);
     }
 
     filteredTodos() {
