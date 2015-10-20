@@ -129,23 +129,6 @@ function main(model) {
         }
     });
     
-    // todo: leave this in the html, since it is static.
-    wnd.klass('info').footer(() => {
-        wnd.p('Double-click to edit a todo');
-        wnd.p(() => {
-            wnd.text('Template by ');
-            wnd.attr('href', 'http://sindresorhus.com').a('Sindre Sorhus');
-        });
-        wnd.p(() => {
-            wnd.text('Created by ');
-            wnd.attr('href', 'http://www.cwi.nl/~storm').a('Tijs van der Storm');
-        });
-        wnd.p(() => {
-            wnd.text('Part of ');
-            wnd.attr('href', 'http://todomvc.com').a('TodoMVC');
-        });        
-    });
-
     model.persist();    
 }
 
