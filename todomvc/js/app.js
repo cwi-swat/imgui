@@ -93,7 +93,7 @@ class Todo {
                 id: this.id};
     }
 
-    save(value) {
+    update(value) {
         let txt = value.trim();
         if (txt !== '') {
             this.text = txt;
@@ -252,7 +252,7 @@ function editTodo(todo) {
                 if (ev.type === 'keyup') {
                     if (ev.keyCode === ENTER_KEY) {
                         todo.editing = false;
-                        todo.save(ev.target.value);
+                        todo.update(ev.target.value);
                     }
                     if (ev.keyCode === ESCAPE_KEY) {
                         todo.editing = false;
@@ -260,7 +260,7 @@ function editTodo(todo) {
                 }
                 if (ev.type === 'focusout') { // blur doesn't bubble up....
                     todo.editing = false;
-                    todo.save(ev.target.value);
+                    todo.update(ev.target.value);
                 }
             }
         });
