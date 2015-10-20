@@ -114,13 +114,11 @@ class TrimGUI {
 
     
     onRoute(hash, block) {
-        console.log('Hello!');
         if (!this.route) {
             return;
         }
-        var route = this.route;
-        this.route = undefined; // only run once.
-        if (route === hash) {
+        if (this.route === hash) {
+            this.route = undefined; // only run once.
             block();
         }
     }
