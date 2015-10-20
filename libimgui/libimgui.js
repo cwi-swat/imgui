@@ -26,6 +26,7 @@ class TrimGUI {
         this.route = document.location.hash;
         this.addSimpleElements();
         this.addInputElements();
+        window.addEventListener('storage', this.dealWithIt, false);
     }
 
     run() {
@@ -112,7 +113,6 @@ class TrimGUI {
         return this;
     }
 
-    
     inRoute(hash, block) {
         if (!this.route) {
             return false;
@@ -122,6 +122,14 @@ class TrimGUI {
             return true;
         }
         return false;
+    }
+
+    onStorage(block) {
+        var event = this.event;
+        if (event && event.type === 'storage') {
+            this.event = undefined; 
+            block(event); 
+        }
     }
     
     on(elt, events, block) {
@@ -211,6 +219,13 @@ class TrimGUI {
         var obj = {};
         obj[n] = x;
         return this.attrs(obj);
+    }
+
+    attrIf(c, n, x) {
+        if (c) {
+            return this.attr(n, x);
+        }
+        return this;
     }
     
     klass(x) {
