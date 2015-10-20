@@ -113,14 +113,15 @@ class TrimGUI {
     }
 
     
-    onRoute(hash, block) {
+    inRoute(hash, block) {
         if (!this.route) {
-            return;
+            return false;
         }
         if (this.route === hash) {
             this.route = undefined; // only run once.
-            block();
+            return true;
         }
+        return false;
     }
     
     on(elt, events, block) {
