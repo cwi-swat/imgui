@@ -9,7 +9,7 @@ class Todos {
     constructor () {
         this.todos = [];
         this.newTodo = '';
-        this.filter = x => true;
+        this.filter = 'none';
         this.ids = 0;
         this.load();
     }
@@ -45,6 +45,15 @@ class Todos {
                 break;
             }
         }
+    }
+
+    shouldShow(todo) {
+        switch (this.filter) {
+        case 'none': return true;
+        case 'active': return !todo.completed;
+        case 'completed': return todo.completed;
+        }
+        return undefined;
     }
     
 }
@@ -97,11 +106,15 @@ const ENTER_KEY = 13;
 const ESCAPE_KEY = 27;
 
 function main(model) {
+    wnd.onStorage(ev => {
+        console.log("Storage change: " + ev);
+    });
+    
     if (wnd.inRoute('#/active')) {
-        model.filter = x => !x.completed;
+        model.filter = 'active';
     }
     else if (wnd.inRoute('#/completed')) {
-        model.filter = x => x.completed;
+        model.filter = 'completed';
     }
     
     wnd.klass('todoapp').section(() => {
@@ -133,8 +146,9 @@ function main(model) {
         });        
     });
 
-    model.persist();
+    model.persist();    
 }
+
 
 function newTodo(model) {
     var attrs = {'class': 'new-todo', type: 'text', value: model.newTodo,
@@ -173,13 +187,23 @@ function mainSection(model, todos) {
         wnd.klass('todo-list').ul(() => {
             for (let i = 0; i < todos.length; i++) {
                 let todo = todos[i];
-                if (model.filter(todo)) {
+                if (model.shouldShow(todo)) {
                     showTodo(todo);
                 }
             }
         });
     });
     
+}
+
+function filterButton(model, title, name, hash) {
+    hash = hash === undefined ? name : hash;
+    wnd.li(() => {
+        if (wnd.attrIf(model.filter === name, 'class', 'selected')
+            .attr('href', '#/' + hash).aclick(title)) {
+            model.filter = name;
+        }
+    });
 }
 
 function footer(model) {
@@ -189,21 +213,9 @@ function footer(model) {
         });
 
         wnd.klass('filters').ul(() => {
-            wnd.li(() => {
-                if (wnd.attrs({'class': 'selected', href: '#/'}).aclick('All')) {
-                    model.filter = x => true;
-                }
-            });
-            wnd.li(() => {
-                if (wnd.attrs({href: '#/active'}).aclick('Active')) {
-                    model.filter = x => !x.completed;
-                }
-            });
-            wnd.li(() => {
-                if (wnd.attrs({href: '#/completed'}).aclick('Completed')) {
-                    model.filter = x => x.completed;
-                }
-            });
+            filterButton(model, 'All', 'none', '');
+            filterButton(model, 'Active', 'active');
+            filterButton(model, 'Completed', 'completed');
         });
         
         if (wnd.klass('clear-completed').button('Clear completed')) {
@@ -236,9 +248,8 @@ function showTodo(todo) {
 
 function viewTodo(todo) {
     wnd.klass('view').div(() => {
-        if (wnd.klass('toggle').checkBox(todo.completed)) {
-            todo.completed = true;
-        }
+        todo.completed = wnd.klass('toggle').checkBox(todo.completed);
+
         wnd.on('label', ['dblclick'], ev => {
             if (ev) {
                 todo.editing = true;
@@ -250,6 +261,8 @@ function viewTodo(todo) {
         }
     });
 }
+
+
 
 function editTodo(todo) {
     wnd.klass('edit')
