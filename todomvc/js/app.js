@@ -13,6 +13,11 @@ class Todos {
         this.newTodo = '';
         this.filter = 'none';
         this.ids = 0;
+        this.filters = {
+            none: x => true,
+            active: x => !x.completed,
+            completed: x => x.completed
+        };
         this.load();
     }
 
@@ -58,16 +63,7 @@ class Todos {
     }
 
     filteredTodos() {
-        let shouldShow = todo => {
-            switch (this.filter) {
-            case 'none': return true;
-            case 'active': return !todo.completed;
-            case 'completed': return todo.completed;
-            }
-            return undefined;
-        };
-
-        return this.todos.filter(shouldShow);
+        return this.todos.filter(this.filters[this.filter]);
     }
     
 }
