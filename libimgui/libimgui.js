@@ -113,7 +113,7 @@ class TrimGUI {
         return this;
     }
 
-    inRoute(hash, block) {
+    enRoute(hash, block) {
         if (!this.route) {
             return false;
         }

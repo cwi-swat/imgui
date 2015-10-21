@@ -5,7 +5,9 @@
 // Data model
 
 
-class Todos {
+const STORAGE_KEY = 'todo-mvc';
+
+class Todos {    
     constructor () {
         this.todos = [];
         this.newTodo = '';
@@ -20,7 +22,7 @@ class Todos {
     }
     
     load() {
-        var txt = window.localStorage['todo-mvc'];
+        var txt = window.localStorage[STORAGE_KEY];
         if (txt) {
             var json = JSON.parse(txt);
             this.ids = json.ids;
@@ -30,7 +32,7 @@ class Todos {
     }
     
     persist() {
-        window.localStorage['todo-mvc'] = JSON.stringify(this.toJSON());
+        window.localStorage[STORAGE_KEY] = JSON.stringify(this.toJSON());
     }
 
     createTodo(value) {
@@ -56,16 +58,16 @@ class Todos {
     }
 
     filteredTodos() {
-        return this.todos.filter(x => this.shouldShow(x));
-    }
-    
-    shouldShow(todo) {
-        switch (this.filter) {
-        case 'none': return true;
-        case 'active': return !todo.completed;
-        case 'completed': return todo.completed;
-        }
-        return undefined;
+        let shouldShow = todo => {
+            switch (this.filter) {
+            case 'none': return true;
+            case 'active': return !todo.completed;
+            case 'completed': return todo.completed;
+            }
+            return undefined;
+        };
+
+        return this.todos.filter(shouldShow);
     }
     
 }
@@ -110,18 +112,18 @@ class Todo {
 }
 
 
-const TrimGUI = require('libimgui');
+const IMGUI = require('libimgui');
 
-const wnd = new TrimGUI(main, new Todos(), 'todoapp');
+const wnd = new IMGUI(main, new Todos(), 'todoapp');
 
 const ENTER_KEY = 13;
 const ESCAPE_KEY = 27;
 
 function main(model) {
-    if (wnd.inRoute('#/active')) {
+    if (wnd.enRoute('#/active')) {
         model.filter = 'active';
     }
-    else if (wnd.inRoute('#/completed')) {
+    else if (wnd.enRoute('#/completed')) {
         model.filter = 'completed';
     }
     
