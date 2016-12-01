@@ -1,10 +1,5 @@
 
-"use strict";
-
-
-var imgui = require('../libimgui');
-imgui.install(window);
-
+var Libimgui = require('../libimgui');
 
 var model = {
     items: [
@@ -16,56 +11,59 @@ var model = {
     gender: "Male",
     number: 0,
     date: "2014-10-03",
-    color: "#ffffff"
+    color: "#ffffff",
+    clicks: 0,
+    list: ['Aap', 'Noot', 'Mies']
 };
 
-function run() {
-    setup(examples, model, 'root');
-}
 
+var wnd = new Libimgui(examples, model, 'root');
 
 function example(title, func) {
-    h3(title, "#" + func.name);
-    pre(function() {
-	text(func.toString());
+    wnd.attr('id', '#' + func.name).h3(title);
+    wnd.pre(function() {
+	wnd.text(func.toString());
     });
-    br();
-    div(".output", function() {
-	func(model);
-    });
+    wnd.br();
+    wnd.klass('output').div(() => func(model));
 }
 
 var sections = {
     "Basics": basics,
     "Model": usingTheModel,
-    "View state (component)": viewState,
-    "State-less components": statelessComponents,
+//    "View state (component)": viewState,
+//    "State-less components": statelessComponents,
     "Upwards data flow (here)": upwardsDataFlow,
+    "Editable List": listEditor,
 //    "How to create a glitch": glitch,
-    "Defining widgets (on)": definingButton,
+//    "Defining widgets (on)": definingButton,
     "Select": selectExample,
     "Radio": radioExample,
-    // "Slider": sliderExample,
-    "Pickers": pickersExample,
-    "Simple todo app": todoApp,
-    "The current model": currentModel,
-    "Current view state": currentViewState
+     "Slider": sliderExample,
+    "Pickers": pickersExample
+//    "Simple todo app": todoApp,
+//    "The current model": currentModel,
+//    "Current view state": currentViewState
     
 };
 
 
+
 function examples(model) {
-    h2("Examples");
+    wnd.h2("Examples");
     
-    ul(function() {
+    wnd.ul(function() {
 	for (var k in sections) {
 	    if (sections.hasOwnProperty(k)) {
-		li(function() {
-		    a(k, ".toc", {href: "#" + sections[k].name});
+		wnd.li(function() {
+		    wnd.klass('toc').attr('href', "#" + sections[k].name).a(k);
 		});
 	    }
 	}
     });
+
+    wnd.pre(JSON.stringify(model, null, 2));
+    
     for (var k in sections) {
 	if (sections.hasOwnProperty(k)) {
 	    example(k, sections[k]);
@@ -75,167 +73,51 @@ function examples(model) {
 }
 
 function basics() {
-    h4("Todos");
-    ul(function() {
-	li(function() { text("Email"); });
-	li(function() { text("Reviewing"); });
+    wnd.h4("Todos");
+    wnd.ul(() => {
+	wnd.li(() => wnd.text("Email"));
+	wnd.li(() => wnd.text("Reviewing"));
     });
 }
 
 function usingTheModel(m) {
-    text("Enter some text: ");
-    m.text = textBox(m.text);
-    br();
-    text("You entered: " + m.text);
+    wnd.text("Enter some text: ");
+    m.text = wnd.textBox(m.text);
+    wnd.br();
+    wnd.text("You entered: " + m.text);
 }
 
-function todoApp(m) {
-    var todoView = component({deleted: false}, function todoView(self, item) {
-	tr(function () {
-	    td(function () { item.done = checkBox(item.done); });
-	    td(function () { item.label = editableLabel(item, item.label); });
-	    td(function () { self.deleted = checkBox(self.deleted, {id: "myid" + item.__obj_id}); });
-	})
-	return self.deleted;
-    });
-
-
-    function headerTable(headings, body) {
-	table(function() {
-	    thead(function() {
-		tr(function() {
-		    for (var i = 0; i < headings.length; i++)
-			th(function() { text(headings[i]); });
-		});
-	    });
-	    body();
-	});
-    }
-
-
-    function showTodos(items) {
-	var dels = [];
-	headerTable(["Done", "Text", "Delete"], function() {
-	    for (var i = 0; i < items.length; i++) 
-		if (todoView(items[i])) 
-		    dels.push(i);
-	});
-	return dels;
-    }
-
-    var toolbar = component({newTodo: ""}, function toolbar(self, items, deleted) {	
-	if (button("Add")) {
-            model.items.push({label: self.newTodo, done: false});
-            self.newTodo = "";
-	}
-	self.newTodo = textBox(self.newTodo);
-
-	deleted = deleted.sort(function (a, b) { return a - b; });
-	if (button("Delete")) {
-	    for (var i = 0; i < deleted.length; i++) {
-		model.items.splice(deleted[i] - i, 1);
-	    }
-	}
-    });
-
-    function app(model) {
-	var deleted = showTodos(model.items);
-	toolbar(model.items, deleted);
-    }
-
-    app(m);
-}
-
-
-function currentModel(m) {
-    editableValue(m);
-}
-
-
-function viewState(m) {
-    var myComponent = component({flag: false}, function myComponent(self, m) {
-	text("Model flag: ");
-	m.flag = checkBox(m.flag);
-	
-	text("View state flag: ");
-	self.flag = checkBox(self.flag);
-    });
-
-    ol(function() {
-	li(function() { myComponent(m); });
-	li(function() { myComponent(m); });
-    });
-}
-
-// this introduces glitches if rendered textually before rendering a component
-// that handles an event in the same round, modifying the view state:
-// a button then gets added in the sync round...
-
-// you lose events
-//
-
-// the rule is: no observable side-effects except in event handler code.
-// but view-state initialization is a side-effect, if we show the view state
-// with widgets (buttons etc.) then this becomes observable if the view
-// state is shown *before*
-// There's also a locality thing: rendering memo is *global*.
-
-function currentViewState(m) {
-    // memo is the internal cache containing view states.
-    editableValue(memo);
-}
-
-function definingButton() {
-
-    function button(label) {
-	return on("button", ["click"], {}, function(ev) {
-	    text(label);
-	    return ev !== undefined;
-	});
-    }
-
-    var statefulButton = component({count: 0}, function statefulButton(self, label) {
-	return on("button", ["click"], {}, function(ev) {
-	    if (ev) self.count++;
-	    text(label + ": " + self.count);
-	});
-    });
-
-    button("My button");
-    statefulButton("My button");
-				   
-}
 
 function statelessComponents(m) {
     function enterText(s) {
-	p("Enter some text: ");
-	return textBox(s);
+	wnd.p("Enter some text: ");
+	return wnd.textBox(s);
     }
     
     m.text = enterText(m.text);
-    br();
-    text("You entered: " + m.text);
+    wnd.br();
+    wnd.text("You entered: " + m.text);
 }
 
-function upwardsDataFlow() {
+function upwardsDataFlow(m) {
 
-    var clickCount = component({clicks: 0}, function clickCount(self, clicked) {
+    function clickCount(clicked) {
 	if (clicked) {
-	    self.clicks++;
+	    m.clicks++;
 	}
-	text("Number of clicks: " + self.clicks);
-    });
+	wnd.text("Number of clicks: " + m.clicks);
+    }
 
-    here(clickCount, function (f) {
-	br();
-	var clicked = button("Click me");
+    wnd.here(clickCount, function (f) {
+	wnd.br();
+	var clicked = wnd.button("Click me");
 	f(clicked);
     });
 }
 
 
 function selectExample(m) {
-    m.gender = select(m.gender, function (option) {
+    m.gender = wnd.select(m.gender, option => {
 	option("Male");
 	option("Female");
 	option("Other");
@@ -243,7 +125,7 @@ function selectExample(m) {
 }
 
 function radioExample(m) {
-    m.gender = radioGroup(m.gender, function (radio) {
+    m.gender = wnd.radioGroup(m.gender, radio => {
 	radio("Male");
 	radio("Female");
 	radio("Other");
@@ -251,29 +133,29 @@ function radioExample(m) {
 }
 
 function sliderExample(m) {
-    m.number = slider(m.number, {min:0, max: 10, step: 1});
-    text("The number is: " + m.number);
+    m.number = wnd.attrs({min:0, max: 10, step: 1}).slider(m.number);
+    wnd.text("The number is: " + m.number);
 }
 
 function pickersExample(m) {
-    m.date = datePicker(m.date);
-    text("The date is: " + m.date);
-    br();
-    m.color = colorPicker(m.color);
-    text("The color is: " + m.color);
+    m.date = wnd.datePicker(m.date);
+    wnd.text("The date is: " + m.date);
+    wnd.br();
+    m.color = wnd.colorPicker(m.color);
+    wnd.text("The color is: " + m.color);
 }
 
 
 
 function editableValue(value) {
     if (value === null) {
-	text("null");
+	wnd.text("null");
 	return null;
     }
 
     if (value === undefined) {
-	text("undefined");
-	return;
+	wnd.text("undefined");
+	return undefined;
     }
 
     if (value.constructor === Array) {
@@ -285,15 +167,15 @@ function editableValue(value) {
     }
 
     if (typeof value === "number") {
-	return parseInt(textBox(value));
+	return parseInt(wnd.textBox(value));
     }
 
     if (typeof value === "string") {
-	return textBox(value);
+	return wnd.textBox(value);
     }
 
     if (typeof value === "boolean") {
-	return checkBox(value);
+	return wnd.checkBox(value);
     }
 
     throw "Unsupported value: " + value;
@@ -302,20 +184,18 @@ function editableValue(value) {
 
 
 function editableObject(obj, render) {
-    table(".table-bordered", function() {
-	thead(function() {
-	    tr(function () {
-		th(function () { text("Property"); });
-		th(function () { text("Value"); });		
+    wnd.klass('table-bordered').table(() => {
+	wnd.thead(function() {
+	    wnd.tr(function () {
+		wnd.th(() => wnd.text("Property"));
+		wnd.th(() => wnd.text("Value"));		
 	    });
 	});
 	for (var k in obj) {
 	    if (obj.hasOwnProperty(k)) {
-		tr(function () {
-		    td(function() {
-			text(k + ":");
-		    });
-		    td(function() {
+		wnd.tr(() => {
+		    wnd.td(() => wnd.text(k + ":"));
+		    wnd.td(() => {
 			obj[k] = render(obj[k]);
 		    });
 		});
@@ -325,58 +205,82 @@ function editableObject(obj, render) {
     return obj;
 }
 
+function listEditor(m) {
+    m.list = editableList(m.list, editableValue, 'someString');
+}
 
 function editableList(xs, renderx, newx) {
 
-    function move(idx, dir) {
-	var elt = xs[idx];
-        xs.splice(idx, 1);
-        xs.splice(idx + dir, 0, elt);
+    function clone(obj) {
+        if (obj.constructor === Array) {
+            return obj.slice(0);
+        }
+        if (typeof obj === 'object') {
+            var newObj = {};
+            for (var x in obj) {
+                if (obj.hasOwnProperty(x)) {
+                    newObj[x] = obj[x];
+                }
+            }
+            return newObj;
+        }
+        return obj;
+    }
+    
+    function move(xs, idx, dir) {
+	var elt = xs[idx]; // get the element
+        //console.log("Elt at  " + idx + " is " + elt);
+        xs.splice(idx, 1); // remove it, element after elt is now at idx
+        //console.log(JSON.stringify(xs));
+        xs.splice(idx + dir, 0, elt); // insert it at idx+dir
+        //console.log(JSON.stringify(xs));
     }
 
-    table(function () {
-        if (newx && xs.length == 0 && button(" + ")) {
-	    tr(function() {
-		td(function () {
-		    xs[0] = clone(newx);
+
+    wnd.table(function () {
+        if (newx && xs.length == 0 && wnd.button(" + ")) {
+	    wnd.tr(function() {
+		wnd.td(function () {
+		    xs[0] = clone(newx);;
 		});
 	    });
         }
-	    
-	// iterate over a copy
-	var elts = xs.slice(0);
-	
-        for (var idx = 0; idx < elts.length; idx++) {
-	    tr(function() {
-		td(function () {
-                    renderx(elts[idx]);
+
+        let idx = 0;
+
+        while (idx < xs.length) {
+	    wnd.tr(function() {
+		wnd.td(function () {
+                    xs[idx] = renderx(xs[idx]);
 		});
 
-		td(function() {
-                    if (newx && button(" + ")) {
+		wnd.td(function() {
+                    if (newx && wnd.button(" + ")) {
 			xs.splice(idx + 1, 0, clone(newx));
+                        idx++;
                     }
 		});
 		
-                td(function() {
-		    if (button(" - ")) {
+                wnd.td(function() {
+		    if (wnd.button(" - ")) {
 			xs.splice(idx, 1);
+                        idx--;
                     }
 		});
 
-		td(function() {
-                    if (idx > 0 && button(" ^ ")) {
-			move(idx, -1);
+		wnd.td(function() {
+                    if (idx > 0 && wnd.button(" ^ ")) {
+			move(xs, idx, -1);
                     }
 		});
 
-		td(function() {
-                    if (idx < xs.length - 1 && button(" v ")) {
-			move(idx, +1);
+		wnd.td(function() {
+                    if (idx < xs.length - 1 && wnd.button(" v ")) {
+			move(xs, idx, 1);
                     }
 		});
             });
-	    
+	    idx++;
         }
     });
 
@@ -384,33 +288,7 @@ function editableList(xs, renderx, newx) {
 }
 
 
-var editableLabel = component({editing: false}, function editableLabel(self, _, txt) {
-    var result = txt;
-
-    function setFocus(elt) {
-	elt.focus();
-    }
-    
-    if (self.editing) {
-	on("input", ["blur"], {type: "text", value: txt, extra: setFocus}, function (ev) {
-	    if (ev) {
-		self.editing = false;
-		result = ev.target.value;
-	    }
-	});
-    }
-    else {
-	on("span", ["dblclick"], {}, function (ev) {
-	    if (ev) {
-		self.editing = true;
-	    }
-	    text(txt);
-	});
-    }
-
-    return result;
-});
 
 
-module.exports = run;
+module.exports = wnd;
 
