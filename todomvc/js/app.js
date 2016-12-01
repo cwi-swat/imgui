@@ -108,7 +108,7 @@ class Todo {
 }
 
 
-const IMGUI = require('libimgui');
+const IMGUI = require('../../libimgui');
 
 const wnd = new IMGUI(main, new Todos(), 'todoapp');
 
