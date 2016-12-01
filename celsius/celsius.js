@@ -17,10 +17,10 @@ function toC(f) {
 }
 
 function c2f(m) {
-    wnd.text("C:")
+    wnd.text("C:");
     m.t = wnd.textBox(m.t);
 
-    wnd.text("F:")
+    wnd.text("F:");
     m.t = toC(wnd.textBox(toF(m.t)));
 }
 				 
