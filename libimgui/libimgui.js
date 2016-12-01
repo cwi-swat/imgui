@@ -247,9 +247,7 @@ class TrimGUI {
     }
     
     textBox(value) {
-        var attrs = {};
-        attrs.type = 'text';
-        attrs.value = value;
+        var attrs = {type: 'text', value: value};
         attrs.onMount = elt => {
                 elt.value = value;
         };
@@ -285,6 +283,8 @@ class TrimGUI {
             this.timers[id] = true;
             this.doRender();
         }, delay);
+        
+        return undefined;
     }
 
 
@@ -305,16 +305,24 @@ class TrimGUI {
 
     select(value, block) {
         var self = this;
+        var idx = -1;
+        var selected = -1;
         function option(optValue, label) {
             var attrs = {value: optValue};
+            idx++;
             if (optValue === value) {
-                attrs['selected'] = true;
+                selected = idx;
             }
             label = label || optValue;
             return self.attrs(attrs).withElement('option', () => self.text(label));
         }
+
         
-        return this.on('select', ['change'], ev => {
+        var myAttrs = {onMount: elt => {
+            elt.selectedIndex = selected;
+        }};
+
+        return this.attrs(myAttrs).on('select', ['change'], ev => {
             block(option);
             return ev  
                 ? ev.target.options[ev.target.selectedIndex].value
@@ -325,22 +333,23 @@ class TrimGUI {
     radioGroup(value, block) {
         var result = value;
         var name = 'name' + (this.ids++);
+        var self = this;
         function radio(radioValue, label) {
             var attrs = {type: 'radio', name: name};
             if (radioValue === value) {
                 attrs['checked'] = true;
             }
-            attrs.onMount = function (elt) {
+            attrs.onMount = elt => {
                 elt.checked = (radioValue === value);
             };
-            return this.on('label', [], () => {
-                this.attrs(attrs).on('input', ['click'], ev => {
+            return self.on('label', [], () => {
+                self.attrs(attrs).on('input', ['click'], ev => {
                     if (ev) {
                         result = radioValue;
                     }
                     return radioValue;
                 });
-                this.text(label || radioValue);
+                self.text(label || radioValue);
                 return radioValue;
             });
         }
@@ -435,7 +444,7 @@ function reconcile(dom, vdom) {
     for (var vattr in vattrs) {
         if (vattrs.hasOwnProperty(vattr)) {
             if (dom.hasAttribute(vattr)) {
-                var dattr = dom.getAttribute(vattr);
+                let dattr = dom.getAttribute(vattr);
                 if (dattr !== vattrs[vattr].toString()) { 
                     //console.log('Updating attribute: ' + vattr + ' = ' + vattrs[vattr]);
                     dom.setAttribute(vattr, vattrs[vattr]);
@@ -449,7 +458,7 @@ function reconcile(dom, vdom) {
     }
     
     for (var i = 0; i < dom.attributes.length; i++) {
-        var dattr = dom.attributes[i];
+        let dattr = dom.attributes[i];
         if (!vattrs.hasOwnProperty(dattr.nodeName)) {
             //console.log('Removing attribute: ' + dattr.nodeName);
             dom.removeAttribute(dattr.nodeName);
