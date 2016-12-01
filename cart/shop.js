@@ -78,7 +78,7 @@ function app(model) {
 function shopDemoView(articles, cart) {
     wnd.table(() => {
 	wnd.tr(() => {
-	    wnd.td({colspan: 2}, () => {
+	    wnd.attr('colspan', 2).td(() => {
 		if (wnd.button('update some items')) {
 		    update(articles);
 		}
@@ -158,17 +158,20 @@ function articleView(cart, articles, article, i) {
 function cartView(cart) {
     wnd.div(() => {
 	wnd.ul(() => {
-	    for (var i = 0; i < cart.entries.length; i++) {
+            var i = 0;
+	    while (i < cart.entries.length) {
 		var entry = cart.entries[i];
 		wnd.li(() => {
 		    if (wnd.button('<<')) {
 			if (--entry.amount < 1) {
 			    cart.entries.splice(cart.entries.indexOf(entry), 1);
+                            i--;
 			}
 		    }
 		    wnd.span(entry.article.name);
 		    wnd.klass('price').span(entry.amount + 'x'); 
 		});
+                i++;
 	    }
 	});
 	wnd.span(('Total: € ' + cart.total).replace(/(\.\d\d)\d*/,'$1'));
