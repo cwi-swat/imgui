@@ -1,19 +1,14 @@
 {
   "name": "libimgui",
-  "version": "1.0.0",
-  "description": "IMGUI",
+  "version": "0.0.1",
+  "description": "Immediate Mode GUIs",
   "main": "libimgui.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "gui",
-    "immediate",
-    "mode"
+    "gui"
   ],
-  "dependencies": {
-    "virtual-dom": "1.0.0"
-  },
-  "author": "Tijs van der Storm (storm@cwi.nl)",
-  "license": "ISC"
+  "author": "Tijs van der Storm",
+  "license": "BSD"
 }

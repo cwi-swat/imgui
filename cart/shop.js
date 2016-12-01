@@ -1,16 +1,12 @@
 
-"use strict";
+'use strict';
 
-
-var imgui = require('../libimgui');
-imgui.install(window);
-
-
-var autoNumber = 0;
 
 /**
  * Data model
  */
+
+var autoNumber = 0;
 
 class Article {
     constructor (name, price) {
@@ -46,9 +42,9 @@ class ShoppingCart {
 
 // Some available articles
 var articles = [
-    ["Funny Bunnies", 17.63],
-    ["Awesome React", 23.95],
-    ["Second hand Netbook", 50.00]
+    ['Funny Bunnies', 17.63],
+    ['Awesome React', 23.95],
+    ['Second hand Netbook', 50.00]
 ].map(function(e) {
     return new Article(e[0], e[1]);
 });
@@ -65,29 +61,39 @@ var model = {
     cart: cart
 }
 
+
+/*
+ * GUI
+ */ 
+
+var TrimGUI = require('../libimgui');
+
+var ig = new TrimGUI(app, model, 'root');
+
+
 function app(model) {
     shopDemoView(model.articles, model.cart);
 }
 
 function shopDemoView(articles, cart) {
-    table(function() {
-	tr(function () {
-	    td({colspan: 2}, function () {
-		if (button("update some items")) {
+    ig.table(() => {
+	ig.tr(() => {
+	    ig.td({colspan: 2}, () => {
+		if (ig.button('update some items')) {
 		    update(articles);
 		}
-		if (button("create a lot of items")) {
+		if (ig.button('create a lot of items')) {
 		    generate(articles, cart);
 		}
 	    });
 	});
-	tr(function () {
-	    td(function() {
-		h2("Available items");
+	ig.tr(() => {
+	    ig.td(() => {
+		ig.h2('Available items');
 		articlesView(cart, articles);
 	    });
-	    td(function() {
-		h2("Your shopping cart");
+	    ig.td(() => {
+		ig.h2('Your shopping cart');
 		cartView(cart);
 	    });
 	});
@@ -95,9 +101,9 @@ function shopDemoView(articles, cart) {
 }
 
 function generate(articles, cart) {
-    var amount = parseInt(prompt("How many articles and entries should be created?", 1000));
+    var amount = parseInt(prompt('How many articles and entries should be created?', 1000));
     for(var i = 0; i < amount; i++) {
-        var art = new Article("Generated item " + articles.length, articles.length);
+        var art = new Article('Generated item ' + articles.length, articles.length);
         articles.push(art);
         cart.entries.push(new Entry(art));
     }
@@ -108,18 +114,18 @@ function generate(articles, cart) {
 function update(articles) {
     for(var i = 0; i < 10; i++) {
         var article = articles[Math.floor(Math.random() * articles.length)];
-        article.name += "x";
+        article.name += 'x';
         article.price += 1;
     }
 }
 
 function articlesView(cart, articles) {
-    div(function () {
-	if (button("new article")) {
-	    articles.push(new Article(prompt("Article name"),
-				      prompt("Price (please fill in a number)")));
+    ig.div(() => {
+	if (ig.button('new article')) {
+	    articles.push(new Article(prompt('Article name'),
+				      prompt('Price (please fill in a number)')));
 	}
-	ul(function () {
+	ig.ul(() => {
 	    for (var i = 0; i < articles.length; i++) {
 		articleView(cart, articles, articles[i], i);
 	    }
@@ -128,54 +134,46 @@ function articlesView(cart, articles) {
 }
 
 function articleView(cart, articles, article, i) {
-    li(function() {
-	span(article.name);
-	if (button(">>")) {
-	    var existingEntry = cart.entries.find(function(entry) {
-		return entry.article === article;
-            });
+    ig.li(() => {
+	ig.span(article.name);
+	if (ig.button('>>')) {
+	    var existingEntry = cart.entries.find(entry => entry.article === article);
             if (existingEntry) {
 		existingEntry.amount += 1;
             }
 	    else {
-		cart.entries.unshift(new Entry(article))
+		cart.entries.unshift(new Entry(article));
 	    }
 	    
 	}
-	if (button("edit")) {
-            article.name = prompt("New name", article.name);
-            article.price = parseInt(prompt("New price", article.price), 10);
+	if (ig.button('edit')) {
+            article.name = prompt('New name', article.name);
+            article.price = parseInt(prompt('New price', article.price), 10);
 	}
-	span("€ " + article.price, ".price");
+	ig.klass('price').span('€ ' + article.price);
     });
 }
 
 
 function cartView(cart) {
-    div(function () {
-	ul(function() {
+    ig.div(() => {
+	ig.ul(() => {
 	    for (var i = 0; i < cart.entries.length; i++) {
 		var entry = cart.entries[i];
-		li(function () {
-		    if (button("<<")) {
+		ig.li(() => {
+		    if (ig.button('<<')) {
 			if (--entry.amount < 1) {
 			    cart.entries.splice(cart.entries.indexOf(entry), 1);
 			}
 		    }
-		    span(entry.article.name);
-		    span(entry.amount + "x", ".price"); 
+		    ig.span(entry.article.name);
+		    ig.klass('price').span(entry.amount + 'x'); 
 		});
 	    }
 	});
-	span(("Total: € " + cart.total).replace(/(\.\d\d)\d*/,"$1"));
+	ig.span(('Total: € ' + cart.total).replace(/(\.\d\d)\d*/,'$1'));
     });
 }
 
 
-
-function run() {
-    setup(app, model, 'root');
-}
-
-
-module.exports = run;
+module.exports = ig;
