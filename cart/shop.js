@@ -142,7 +142,7 @@ function articleView(cart, articles, article, i) {
 		existingEntry.amount += 1;
             }
 	    else {
-		cart.entries.unshift(new Entry(article))
+		cart.entries.unshift(new Entry(article));
 	    }
 	    
 	}
