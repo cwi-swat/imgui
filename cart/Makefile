@@ -1,6 +1,6 @@
 
 
-all: build publish
+all: build
 
 build:
 	browserify shop.js --debug --standalone app > bundle.js

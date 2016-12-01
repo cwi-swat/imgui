@@ -66,9 +66,9 @@ var model = {
  * GUI
  */ 
 
-var TrimGUI = require('../libimgui');
+var Libimgui = require('../libimgui');
 
-var ig = new TrimGUI(app, model, 'root');
+var wnd = new Libimgui(app, model, 'root');
 
 
 function app(model) {
@@ -76,24 +76,24 @@ function app(model) {
 }
 
 function shopDemoView(articles, cart) {
-    ig.table(() => {
-	ig.tr(() => {
-	    ig.td({colspan: 2}, () => {
-		if (ig.button('update some items')) {
+    wnd.table(() => {
+	wnd.tr(() => {
+	    wnd.td({colspan: 2}, () => {
+		if (wnd.button('update some items')) {
 		    update(articles);
 		}
-		if (ig.button('create a lot of items')) {
+		if (wnd.button('create a lot of items')) {
 		    generate(articles, cart);
 		}
 	    });
 	});
-	ig.tr(() => {
-	    ig.td(() => {
-		ig.h2('Available items');
+	wnd.tr(() => {
+	    wnd.td(() => {
+		wnd.h2('Available items');
 		articlesView(cart, articles);
 	    });
-	    ig.td(() => {
-		ig.h2('Your shopping cart');
+	    wnd.td(() => {
+		wnd.h2('Your shopping cart');
 		cartView(cart);
 	    });
 	});
@@ -120,12 +120,12 @@ function update(articles) {
 }
 
 function articlesView(cart, articles) {
-    ig.div(() => {
-	if (ig.button('new article')) {
+    wnd.div(() => {
+	if (wnd.button('new article')) {
 	    articles.push(new Article(prompt('Article name'),
 				      prompt('Price (please fill in a number)')));
 	}
-	ig.ul(() => {
+	wnd.ul(() => {
 	    for (var i = 0; i < articles.length; i++) {
 		articleView(cart, articles, articles[i], i);
 	    }
@@ -134,9 +134,9 @@ function articlesView(cart, articles) {
 }
 
 function articleView(cart, articles, article, i) {
-    ig.li(() => {
-	ig.span(article.name);
-	if (ig.button('>>')) {
+    wnd.li(() => {
+	wnd.span(article.name);
+	if (wnd.button('>>')) {
 	    var existingEntry = cart.entries.find(entry => entry.article === article);
             if (existingEntry) {
 		existingEntry.amount += 1;
@@ -146,34 +146,34 @@ function articleView(cart, articles, article, i) {
 	    }
 	    
 	}
-	if (ig.button('edit')) {
+	if (wnd.button('edit')) {
             article.name = prompt('New name', article.name);
             article.price = parseInt(prompt('New price', article.price), 10);
 	}
-	ig.klass('price').span('€ ' + article.price);
+	wnd.klass('price').span('€ ' + article.price);
     });
 }
 
 
 function cartView(cart) {
-    ig.div(() => {
-	ig.ul(() => {
+    wnd.div(() => {
+	wnd.ul(() => {
 	    for (var i = 0; i < cart.entries.length; i++) {
 		var entry = cart.entries[i];
-		ig.li(() => {
-		    if (ig.button('<<')) {
+		wnd.li(() => {
+		    if (wnd.button('<<')) {
 			if (--entry.amount < 1) {
 			    cart.entries.splice(cart.entries.indexOf(entry), 1);
 			}
 		    }
-		    ig.span(entry.article.name);
-		    ig.klass('price').span(entry.amount + 'x'); 
+		    wnd.span(entry.article.name);
+		    wnd.klass('price').span(entry.amount + 'x'); 
 		});
 	    }
 	});
-	ig.span(('Total: € ' + cart.total).replace(/(\.\d\d)\d*/,'$1'));
+	wnd.span(('Total: € ' + cart.total).replace(/(\.\d\d)\d*/,'$1'));
     });
 }
 
 
-module.exports = ig;
+module.exports = wnd;
